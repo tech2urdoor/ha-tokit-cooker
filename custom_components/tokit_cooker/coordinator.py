@@ -2,14 +2,16 @@
 from __future__ import annotations
 
 import logging
+from datetime import datetime
 from typing import Any
 
 from homeassistant.config_entries import ConfigEntry
-from homeassistant.core import HomeAssistant
+from homeassistant.core import CALLBACK_TYPE, HomeAssistant
 from homeassistant.exceptions import HomeAssistantError
+from homeassistant.helpers.event import async_call_later
 from homeassistant.helpers.update_coordinator import DataUpdateCoordinator, UpdateFailed
 
-from .const import COOKING_INTERVAL, DOMAIN, IDLE_INTERVAL, PROPERTIES, STATUS_HEATING
+from .const import ACTIVE_INTERVAL, DOMAIN, FOLLOW_UP_SECONDS, IDLE_INTERVAL, PROPERTIES, STATUS_ADJUSTABLE
 from .miio import MiioDevice, MiioError
 
 _LOGGER = logging.getLogger(__name__)
@@ -24,6 +26,7 @@ class TokitCoordinator(DataUpdateCoordinator[dict[str, Any]]):
         super().__init__(hass, _LOGGER, config_entry=entry, name=DOMAIN, update_interval=IDLE_INTERVAL)
         self.device = device
         self.info = info
+        self._cancel_follow_up: CALLBACK_TYPE | None = None
 
     def _read(self) -> dict[str, Any]:
         values = self.device.get_properties(list(PROPERTIES.values()))
@@ -36,8 +39,8 @@ class TokitCoordinator(DataUpdateCoordinator[dict[str, Any]]):
             raise UpdateFailed(str(err)) from err
         if data.get("status") is None:
             raise UpdateFailed("the cooker returned no status")
-        # Poll faster while it's heating, so temperature and power stay current.
-        self.update_interval = COOKING_INTERVAL if data["status"] in STATUS_HEATING else IDLE_INTERVAL
+        # Read faster while it's cooking or paused, so temperature, power and the timer stay current.
+        self.update_interval = ACTIVE_INTERVAL if data["status"] in STATUS_ADJUSTABLE else IDLE_INTERVAL
         return data
 
     async def async_action(self, action: tuple[int, int], inputs: list[tuple[int, Any]] | None = None) -> None:
@@ -46,3 +49,19 @@ class TokitCoordinator(DataUpdateCoordinator[dict[str, Any]]):
         except MiioError as err:
             raise HomeAssistantError(f"The cooker didn't accept that: {err}") from err
         await self.async_request_refresh()
+        self._read_again_soon()
+
+    def _read_again_soon(self) -> None:
+        if self._cancel_follow_up:
+            self._cancel_follow_up()
+        self._cancel_follow_up = async_call_later(self.hass, FOLLOW_UP_SECONDS, self._follow_up)
+
+    async def _follow_up(self, _now: datetime) -> None:
+        self._cancel_follow_up = None
+        await self.async_refresh()
+
+    async def async_shutdown(self) -> None:
+        if self._cancel_follow_up:
+            self._cancel_follow_up()
+            self._cancel_follow_up = None
+        await super().async_shutdown()

@@ -46,4 +46,5 @@ without a press on its own button. Treat it like a password.
 
 It stays the same until the cooker is put on a Wi-Fi network again, by the app or by anything else.
 Resetting the cooker's Wi-Fi doesn't change it. Setting the Wi-Fi up afterwards does, every time, so
-after that you read the token again and give Home Assistant the new one.
+after that you read the token again and give it to Home Assistant: open the cooker under **Settings →
+Devices & services**, choose **Reconfigure** from its menu, and enter the new token.

@@ -65,6 +65,10 @@ setup happens.
 
 ## Not tried
 
+- Leaving the cooker in setup mode for good and talking to it on its own network, where its token
+  is known. It isn't known whether the cooker answers anything but `miIO.info` there, or how long it
+  keeps that network open. That network has no password and gives the token to anyone in range, so
+  it would be a poor way to run a hob even if it worked.
 - Reading the token out of the cooker's Wi-Fi chip. That means opening a mains appliance.
 - Catching what the cooker tells its maker's cloud.
 - Other firmware versions. If yours behaves differently, please

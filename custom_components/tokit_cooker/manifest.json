@@ -5,10 +5,18 @@
     "@tech2urdoor"
   ],
   "config_flow": true,
+  "dhcp": [
+    {
+      "hostname": "chunmi-ihcooker-cbhw*"
+    },
+    {
+      "registered_devices": true
+    }
+  ],
   "documentation": "https://github.com/tech2urdoor/ha-tokit-cooker",
   "integration_type": "device",
   "iot_class": "local_polling",
   "issue_tracker": "https://github.com/tech2urdoor/ha-tokit-cooker/issues",
   "requirements": [],
-  "version": "0.1.1"
+  "version": "0.2.0"
 }

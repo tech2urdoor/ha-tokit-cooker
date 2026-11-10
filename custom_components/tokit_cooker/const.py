@@ -12,8 +12,12 @@ DOMAIN = "tokit_cooker"
 # anything not listed here.
 SUPPORTED_MODELS = {"chunmi.ihcooker.cbhw"}
 
-IDLE_INTERVAL = timedelta(seconds=30)
-COOKING_INTERVAL = timedelta(seconds=5)
+# How often to read the cooker. A real one answered 217 reads in a row at 10 seconds apart.
+IDLE_INTERVAL = timedelta(seconds=10)
+ACTIVE_INTERVAL = timedelta(seconds=5)
+# After a command the cooker is read at once, and once more this many seconds later in case
+# it hadn't caught up. Whether a real cooker ever lags like that hasn't been measured.
+FOLLOW_UP_SECONDS = 2
 
 # key: (siid, piid). Eleven properties, so one request reads the lot.
 PROPERTIES = {
@@ -32,6 +36,7 @@ PROPERTIES = {
 
 STATUS = {0: "idle", 1: "cooking", 2: "timing", 3: "scheduled", 4: "paused", 5: "off"}
 STATUS_HEATING = {1, 2}
+# Cooking or paused: the states where power and temperature can be changed, and the ones read faster.
 STATUS_ADJUSTABLE = {1, 2, 4}
 
 FAULT = {

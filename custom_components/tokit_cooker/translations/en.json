@@ -10,7 +10,7 @@
         },
         "data_description": {
           "host": "Give the cooker a fixed address in your router so this doesn't change.",
-          "token": "32 letters and digits. It changes only if the cooker is reset and paired again."
+          "token": "32 characters, using only 0-9 and a-f. It changes whenever the cooker's Wi-Fi is set up again."
         }
       }
     },
@@ -20,7 +20,9 @@
     },
     "abort": {
       "already_configured": "This cooker is already set up.",
-      "unsupported_model": "This is a {model}. This integration has only been seen working on the TOKIT Induction Cooker Pro (chunmi.ihcooker.cbhw), and the same commands could mean something else on another hob, so it won't set this one up."
+      "unsupported_model": "This is a {model}. This integration has only been seen working on the TOKIT Induction Cooker Pro (chunmi.ihcooker.cbhw), and the same commands could mean something else on another hob, so it won't set this one up.",
+      "reconfigure_successful": "The cooker's address and token have been updated.",
+      "wrong_device": "That address and token belong to a different cooker from the one being changed."
     }
   },
   "entity": {

@@ -5,20 +5,25 @@
 """
 from __future__ import annotations
 
+import json
+from datetime import timedelta
 from unittest import mock
 
 import pytest
 from fake_cooker import MAC, TOKEN, FakeCooker
-from homeassistant.config_entries import SOURCE_USER, ConfigEntryState
+from homeassistant.config_entries import SOURCE_DHCP, SOURCE_USER, ConfigEntryState
 from homeassistant.core import HomeAssistant
 from homeassistant.data_entry_flow import FlowResultType
 from homeassistant.exceptions import HomeAssistantError
 from homeassistant.helpers import device_registry as dr
 from homeassistant.helpers import entity_registry as er
-from pytest_homeassistant_custom_component.common import MockConfigEntry
+from homeassistant.helpers.service_info.dhcp import DhcpServiceInfo
+from homeassistant.util import dt as dt_util
+from pytest_homeassistant_custom_component.common import MockConfigEntry, async_fire_time_changed
 
 from custom_components.tokit_cooker import config_flow, miio
 from custom_components.tokit_cooker.const import DOMAIN
+from custom_components.tokit_cooker.diagnostics import async_get_config_entry_diagnostics
 
 UNIQUE = MAC.lower()
 ENTRY_DATA = {"host": "127.0.0.1", "token": TOKEN}
@@ -267,4 +272,114 @@ async def test_the_same_cooker_is_not_added_twice(hass: HomeAssistant, cooker: F
     assert result["type"] is FlowResultType.ABORT
     assert result["reason"] == "already_configured"
     await hass.async_block_till_done()
+    await _remove(hass, entry)
+
+
+def _reads(cooker: FakeCooker) -> int:
+    return sum(1 for request in cooker.requests if request["method"] == "get_properties")
+
+
+async def test_it_reads_faster_while_cooking_or_paused(hass: HomeAssistant, cooker: FakeCooker) -> None:
+    entry = await _add(hass)
+    coordinator = entry.runtime_data
+    assert coordinator.update_interval == timedelta(seconds=10)
+    cooker.press_start()
+    await _refresh(hass, entry)
+    assert coordinator.update_interval == timedelta(seconds=5)
+    cooker.props[(2, 1)] = 4  # paused
+    await _refresh(hass, entry)
+    assert coordinator.update_interval == timedelta(seconds=5)
+    cooker.props[(2, 1)] = 0  # idle
+    await _refresh(hass, entry)
+    assert coordinator.update_interval == timedelta(seconds=10)
+    await _remove(hass, entry)
+
+
+async def test_a_command_is_followed_by_a_second_read(hass: HomeAssistant, cooker: FakeCooker) -> None:
+    entry = await _add(hass)
+    before = _reads(cooker)
+    await hass.services.async_call(DOMAIN, "select_mode", {"mode": "hotpot"}, blocking=True)
+    await hass.async_block_till_done()
+    assert _reads(cooker) == before + 1
+    # A cooker that only caught up after the first read: the second read still finds it.
+    cooker.props[(3, 8)] = 111
+    async_fire_time_changed(hass, dt_util.utcnow() + timedelta(seconds=2.5))
+    await hass.async_block_till_done(wait_background_tasks=True)
+    assert _reads(cooker) == before + 2
+    assert _state(hass, "sensor", "target_temperature") == "111"
+    await _remove(hass, entry)
+
+
+async def test_a_new_token_goes_in_through_reconfigure(hass: HomeAssistant, cooker: FakeCooker) -> None:
+    entry = MockConfigEntry(
+        domain=DOMAIN, data={"host": "127.0.0.1", "token": "f" * 32}, unique_id=UNIQUE, title="TOKIT Induction Cooker"
+    )
+    entry.add_to_hass(hass)
+    result = await entry.start_reconfigure_flow(hass)
+    assert result["type"] is FlowResultType.FORM
+    result = await hass.config_entries.flow.async_configure(result["flow_id"], ENTRY_DATA)
+    assert result["type"] is FlowResultType.ABORT
+    assert result["reason"] == "reconfigure_successful"
+    await hass.async_block_till_done()
+    assert entry.data == ENTRY_DATA
+    assert entry.state is ConfigEntryState.LOADED
+    await _remove(hass, entry)
+
+
+async def test_reconfigure_refuses_a_different_cooker(hass: HomeAssistant, cooker: FakeCooker) -> None:
+    old = {"host": "127.0.0.1", "token": "f" * 32}
+    entry = MockConfigEntry(domain=DOMAIN, data=old, unique_id="11:22:33:44:55:66", title="TOKIT Induction Cooker")
+    entry.add_to_hass(hass)
+    result = await entry.start_reconfigure_flow(hass)
+    result = await hass.config_entries.flow.async_configure(result["flow_id"], ENTRY_DATA)
+    assert result["type"] is FlowResultType.ABORT
+    assert result["reason"] == "wrong_device"
+    assert entry.data == old
+
+
+def _seen_by_the_router(ip: str) -> DhcpServiceInfo:
+    return DhcpServiceInfo(ip=ip, hostname="chunmi-ihcooker-cbhw_mibteeff", macaddress="aabbccddeeff")
+
+
+async def test_a_cooker_the_router_saw_needs_only_its_token(hass: HomeAssistant, cooker: FakeCooker) -> None:
+    result = await hass.config_entries.flow.async_init(
+        DOMAIN, context={"source": SOURCE_DHCP}, data=_seen_by_the_router("127.0.0.1")
+    )
+    assert result["type"] is FlowResultType.FORM
+    assert result["step_id"] == "user"
+    (host_field,) = [key for key in result["data_schema"].schema if key == "host"]
+    assert host_field.description == {"suggested_value": "127.0.0.1"}
+    result = await hass.config_entries.flow.async_configure(result["flow_id"], ENTRY_DATA)
+    assert result["type"] is FlowResultType.CREATE_ENTRY
+    await hass.async_block_till_done()
+    entry = hass.config_entries.async_entries(DOMAIN)[0]
+    assert entry.unique_id == UNIQUE
+    await _remove(hass, entry)
+
+
+async def test_a_cooker_that_moved_has_its_address_updated(hass: HomeAssistant, cooker: FakeCooker) -> None:
+    entry = MockConfigEntry(
+        domain=DOMAIN, data={"host": "127.0.0.9", "token": TOKEN}, unique_id=UNIQUE, title="TOKIT Induction Cooker"
+    )
+    entry.add_to_hass(hass)
+    result = await hass.config_entries.flow.async_init(
+        DOMAIN, context={"source": SOURCE_DHCP}, data=_seen_by_the_router("127.0.0.1")
+    )
+    assert result["type"] is FlowResultType.ABORT
+    assert result["reason"] == "already_configured"
+    await hass.async_block_till_done()
+    assert entry.data == ENTRY_DATA
+
+
+async def test_diagnostics_leave_out_the_token_and_the_addresses(hass: HomeAssistant, cooker: FakeCooker) -> None:
+    entry = await _add(hass)
+    report = await async_get_config_entry_diagnostics(hass, entry)
+    assert report["info"] == {"model": "chunmi.ihcooker.cbhw", "fw_ver": "2.2.0_0002"}
+    assert report["properties"]["status"] == 5
+    text = json.dumps(report).lower()
+    assert TOKEN not in text
+    assert MAC.lower() not in text
+    assert "127.0.0.1" not in text
+    assert "pretend-wifi" not in text
+    assert "1234567890" not in text
     await _remove(hass, entry)

@@ -132,7 +132,16 @@ class FakeCooker:
         method, params = request.get("method"), request.get("params")
         result: Any
         if method == "miIO.info":
-            result = {"model": self.model, "mac": MAC, "fw_ver": "2.2.0_0002"}
+            # A real cooker's answer has these keys. What is inside ap and netif is a guess.
+            result = {
+                "model": self.model,
+                "mac": MAC,
+                "fw_ver": "2.2.0_0002",
+                "token": self._token.hex(),
+                "uid": 1234567890,
+                "ap": {"ssid": "pretend-wifi", "bssid": "11:22:33:44:55:66", "rssi": -50},
+                "netif": {"localIp": "127.0.0.1", "mask": "255.0.0.0", "gw": "127.0.0.1"},
+            }
         elif method == "get_properties":
             result = []
             for item in params:

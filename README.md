@@ -38,7 +38,8 @@ Once someone has pressed it, everything else can be done from Home Assistant.
 
 Three more diagnostic sensors (`Detailed status`, `Program type`, `Phase`) are there but disabled.
 
-It polls every 30 seconds, and every 5 while the cooker is cooking.
+It reads the cooker every 10 seconds, and every 5 while it is cooking or paused. After a command
+it reads at once, and once more two seconds later.
 
 ## What it doesn't do
 
@@ -101,8 +102,14 @@ configuration, then restart.
 ### Then
 
 **Settings → Devices & services → Add integration → TOKIT Induction Cooker**, and give it the
-address and the token. If the token ever changes, add the integration again with the new one: it
-updates the cooker that's already there.
+address and the token. Home Assistant may also find the cooker by itself when the cooker joins the
+network, and then it asks only for the token.
+
+If the token ever changes, open the cooker under **Devices & services**, choose **Reconfigure** from
+its menu, and give it the new one. If the cooker's address changes, Home Assistant follows it.
+
+For a bug report, **Download diagnostics** on the same page gives the cooker's model, firmware and
+last readings. The token, the addresses and your Wi-Fi's name are left out of it.
 
 ## Keeping it local
 
@@ -125,6 +132,8 @@ yet, and it will stop the TOKIT app working with it.
 | Power and temperature refused while idle | Yes | In Home Assistant, and the cooker itself refuses too |
 | Reading the token from the phone, and again after the cooker was set up afresh | Yes | Both times with version 1.5.2 of the app |
 | Setup without the app | No | It can't work. The cooker makes a new token when it's given Wi-Fi details, and shows it to nothing on the network |
+| Home Assistant finding the cooker by itself, and following a change of address | No | Run against a simulated cooker only |
+| Reconfigure with a new token | No | Run against a simulated cooker only |
 | Fault reporting | No | No fault has happened yet |
 | Working with the cooker's internet access blocked | No | |
 
