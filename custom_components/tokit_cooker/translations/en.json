@@ -1,0 +1,154 @@
+{
+  "config": {
+    "step": {
+      "user": {
+        "title": "TOKIT induction cooker",
+        "description": "Talks to the cooker directly on your network. Nothing goes through TOKIT's or Xiaomi's servers.",
+        "data": {
+          "host": "IP address",
+          "token": "Token"
+        },
+        "data_description": {
+          "host": "Give the cooker a fixed address in your router so this doesn't change.",
+          "token": "32 letters and digits. It changes only if the cooker is reset and paired again."
+        }
+      }
+    },
+    "error": {
+      "cannot_connect": "No answer from the cooker. Check the address and the token.",
+      "invalid_token": "The token must be 32 characters, using only 0-9 and a-f."
+    },
+    "abort": {
+      "already_configured": "This cooker is already set up.",
+      "unsupported_model": "This is a {model}. This integration has only been seen working on the TOKIT Induction Cooker Pro (chunmi.ihcooker.cbhw), and the same commands could mean something else on another hob, so it won't set this one up."
+    }
+  },
+  "entity": {
+    "sensor": {
+      "status": {
+        "name": "Status",
+        "state": {
+          "idle": "Idle",
+          "cooking": "Cooking",
+          "timing": "Cooking with timer",
+          "scheduled": "Scheduled",
+          "paused": "Paused",
+          "off": "Off"
+        }
+      },
+      "temperature": {
+        "name": "Temperature"
+      },
+      "target_temperature": {
+        "name": "Target temperature"
+      },
+      "power_level": {
+        "name": "Power level"
+      },
+      "time_remaining": {
+        "name": "Time remaining"
+      },
+      "cooking_time": {
+        "name": "Cooking time"
+      },
+      "fault": {
+        "name": "Fault",
+        "state": {
+          "none": "None",
+          "no_pan": "No pan",
+          "high_voltage": "Mains voltage too high",
+          "low_voltage": "Mains voltage too low",
+          "surface_overheat": "Surface too hot",
+          "igbt_overheat": "Electronics too hot",
+          "igbt_sensor": "Electronics sensor fault",
+          "surface_sensor": "Surface sensor fault",
+          "communication": "Internal communication fault",
+          "coil_open": "Coil disconnected"
+        }
+      },
+      "work_status": {
+        "name": "Detailed status",
+        "state": {
+          "idle": "Idle",
+          "cooking": "Cooking",
+          "scheduled": "Scheduled",
+          "error": "Error",
+          "idle_timer": "Idle with timer",
+          "cooking_timer": "Cooking with timer",
+          "off": "Off",
+          "paused": "Paused",
+          "charging": "Charging",
+          "stopping": "Stopping",
+          "timer_paused": "Timer paused"
+        }
+      },
+      "recipe_type": {
+        "name": "Program type",
+        "state": {
+          "preset": "Built-in mode",
+          "single_power": "Fixed power",
+          "multi_power": "Stepped power",
+          "single_temperature": "Fixed temperature",
+          "recipe": "Recipe"
+        }
+      },
+      "phase": {
+        "name": "Phase"
+      }
+    },
+    "binary_sensor": {
+      "heating": {
+        "name": "Heating"
+      },
+      "problem": {
+        "name": "Problem"
+      }
+    },
+    "number": {
+      "power_level": {
+        "name": "Power level"
+      },
+      "target_temperature": {
+        "name": "Target temperature"
+      }
+    },
+    "button": {
+      "stop": {
+        "name": "Stop"
+      },
+      "pause": {
+        "name": "Pause"
+      },
+      "resume": {
+        "name": "Resume"
+      }
+    }
+  },
+  "selector": {
+    "cook_mode": {
+      "options": {
+        "hotpot": "Hotpot",
+        "steam_boil": "Steam or boil",
+        "stir_fry": "Stir fry",
+        "fry": "Fry",
+        "soup": "Soup or congee"
+      }
+    }
+  },
+  "services": {
+    "select_mode": {
+      "name": "Select cooking mode",
+      "description": "Wakes the cooker and selects one of its built-in modes. The cooker then waits for a press on its own start button before it heats, so this can't start the hob by itself.",
+      "fields": {
+        "mode": {
+          "name": "Mode",
+          "description": "The built-in mode to select."
+        },
+        "device_id": {
+          "name": "Cooker",
+          "description": "Only needed if you have more than one."
+        }
+      }
+    }
+  }
+}

@@ -1,0 +1,65 @@
+name: Validate
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  schedule:
+    - cron: "41 3 * * 1"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  hassfest:
+    name: hassfest
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: home-assistant/actions/hassfest@master
+
+  hacs:
+    name: HACS
+    runs-on: ubuntu-latest
+    steps:
+      - uses: hacs/action@main
+        with:
+          category: integration
+          comment: "false"
+
+  tests:
+    name: Protocol and setup tests (Python ${{ matrix.python }})
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        python: ["3.9", "3.13", "3.14"]
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-python@v7
+        with:
+          python-version: ${{ matrix.python }}
+      - name: Every file compiles
+        run: python -m compileall -q custom_components/tokit_cooker/miio.py tools tests/fake_cooker.py tests/test_miio.py tests/test_setup_wifi.py
+      - name: Install cryptography
+        run: pip install cryptography
+      - name: The protocol client against a pretend cooker
+        run: python tests/test_miio.py
+      - name: Setup without the app against a pretend cooker
+        run: python tests/test_setup_wifi.py
+
+  homeassistant:
+    name: Runs in Home Assistant
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-python@v7
+        with:
+          python-version: "3.14"
+      - name: Install Home Assistant's test kit
+        run: pip install pytest-homeassistant-custom-component
+      - name: Every module imports
+        run: python tests/check_imports.py
+      - name: The integration set up in Home Assistant, against a pretend cooker
+        run: pytest -q

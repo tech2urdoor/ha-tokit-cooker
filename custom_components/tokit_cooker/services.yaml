@@ -1,0 +1,18 @@
+select_mode:
+  fields:
+    mode:
+      required: true
+      selector:
+        select:
+          translation_key: cook_mode
+          options:
+            - hotpot
+            - steam_boil
+            - stir_fry
+            - fry
+            - soup
+    device_id:
+      required: false
+      selector:
+        device:
+          integration: tokit_cooker

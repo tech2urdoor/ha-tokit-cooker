@@ -1,0 +1,22 @@
+{
+  "entity": {
+    "sensor": {
+      "status": { "default": "mdi:pot-steam" },
+      "power_level": { "default": "mdi:fire" },
+      "time_remaining": { "default": "mdi:timer-outline" },
+      "cooking_time": { "default": "mdi:timer-play-outline" },
+      "fault": { "default": "mdi:alert-circle-outline" }
+    },
+    "number": {
+      "power_level": { "default": "mdi:fire" }
+    },
+    "button": {
+      "stop": { "default": "mdi:stop" },
+      "pause": { "default": "mdi:pause" },
+      "resume": { "default": "mdi:play" }
+    }
+  },
+  "services": {
+    "select_mode": { "service": "mdi:pot-steam" }
+  }
+}
