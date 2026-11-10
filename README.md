@@ -10,10 +10,11 @@ app, account or cloud. It's a community project and is [not affiliated with TOKI
 > 2.2.0_0002) an earlier build of this read the cooker through a cook and selected a mode from Home
 > Assistant. With a pot of water heating, power level, target temperature, pause, resume and stop
 > all worked when sent from a script using the same protocol code.
-> Not done yet on a real cooker: pressing those controls from Home Assistant while it heats, and
-> [setting it up without the app](docs/setup-without-the-app.md). The code in this release has run
-> against a simulated cooker only. The table under [What has been seen](#what-has-been-seen) keeps
-> score.
+> Not done yet on a real cooker: pressing those controls from Home Assistant while it heats.
+> [Setting it up without the app](docs/setup-without-the-app.md) **doesn't work yet**: tried on the
+> real cooker, it put the cooker on the Wi-Fi and left it answering to no known token. Apart from
+> that attempt, the code in this release has run against a simulated cooker only. The table under
+> [What has been seen](#what-has-been-seen) keeps score.
 
 **It can't start the heat, and that is the cooker's doing.** A start command over the network only
 wakes the cooker and selects a mode. It then waits for a press on its own button before it heats.
@@ -71,7 +72,8 @@ Home Assistant needs two things: the cooker's address on your network, and its *
 
 - **Without the app.** Reset the cooker's Wi-Fi, join the network it opens, and run a script from
   this repository. It reads the token and puts the cooker on your Wi-Fi, with no account anywhere.
-  [How to do it](docs/setup-without-the-app.md). Not yet tried on a real cooker.
+  [How it's meant to go](docs/setup-without-the-app.md). **It doesn't work yet**, so read the
+  warning there before you try it.
 - **With a cooker already set up in the TOKIT app.** It stays as it is, and you
   [read its token from an Android phone](docs/token.md). This is how the one cooker here was done.
 
@@ -118,7 +120,7 @@ yet, and it will stop the TOKIT app working with it.
 | Power level and target temperature while heating | Yes | From a script. Not yet from Home Assistant |
 | Pause, resume and stop while heating | Yes | From a script. Not yet from Home Assistant |
 | Power and temperature refused while idle | Yes | In Home Assistant, and the cooker itself refuses too |
-| Setup without the app | No | Simulated cooker only |
+| Setup without the app | No | Tried once. The cooker joined the Wi-Fi, then stopped answering to the token it had shown |
 | Fault reporting | No | No fault has happened yet |
 | Working with the cooker's internet access blocked | No | |
 

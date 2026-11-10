@@ -1,12 +1,14 @@
 # Setting the cooker up without the app
 
 > [!WARNING]
-> **Not yet tried on a real cooker.** [tools/setup_wifi.py](../tools/setup_wifi.py) follows the way
-> this family of devices is publicly known to be set up (the
-> [python-miio](https://github.com/rytilahti/python-miio) library has done the same exchange on other
-> Xiaomi-family devices for years), and it passes its tests against a simulated cooker. Whether this
-> cooker answers the same way is still to be seen. If it doesn't, nothing is lost: reset the Wi-Fi
-> again and set it up with the app. This page will say what happened once it has been tried.
+> **This doesn't work yet, and trying it will lock you out of the cooker until you set it up again.**
+> It has been tried once on a real cooker. [tools/setup_wifi.py](../tools/setup_wifi.py) found the
+> cooker on its own network, read a token and sent the Wi-Fi details, and the cooker joined the
+> network. It then stopped answering to that token, so nothing could read or control it. The way
+> back is to reset the Wi-Fi again and set the cooker up in the app.
+>
+> Running the script with `--check` is safe: it reads and changes nothing. Why the token stops
+> working is being looked into, and this page will say when the rest works.
 
 A cooker whose Wi-Fi has been reset opens a Wi-Fi network of its own and waits to be told which
 network to join. The app normally does the telling. The script does it instead, and while it's there
@@ -24,9 +26,8 @@ goes over the internet.
 
 1. **Reset the cooker's Wi-Fi**, the way its manual describes. It leaves your network, if it was on
    one, and opens its own.
-2. **Join that network from the computer.** It has no password. Its name is expected to start with
-   the cooker's model, `chunmi-ihcooker-cbhw_`. The computer will say it has no internet, which is
-   right.
+2. **Join that network from the computer.** It has no password. Its name starts with the cooker's
+   model, `chunmi-ihcooker-cbhw_`. The computer will say it has no internet, which is right.
 3. **Run the script** from the repository folder:
 
    ```bash
@@ -51,7 +52,7 @@ then stops without changing anything.
 | `--check` | Find the cooker and read its token, then stop |
 | `--ssid NAME` | The Wi-Fi network to put it on, instead of being asked |
 | `--token-file FILE` | Save the token in a file only you can read, instead of showing it |
-| `--host ADDRESS` | The cooker's address on its own network, if the script can't find it. It's the router address your Wi-Fi settings show while you're joined to the cooker |
+| `--host ADDRESS` | The cooker's address on its own network, if the script can't find it. It's the router address your Wi-Fi settings show while you're joined to the cooker. On the cooker tried, that was `10.10.1.1` |
 
 There is deliberately no option for the Wi-Fi password, so it never lands in your shell's history.
 
@@ -72,9 +73,9 @@ Three things, all to the cooker and nowhere else:
   protected only by that token, so someone within radio range at that moment could read both. It
   lasts the minute the setup takes, and it's how setup over an access point works for this whole
   family of devices.
-- **The token probably changes at every Wi-Fi reset.** It does on other devices of this family. If
-  the cooker was already in Home Assistant, add the integration again with the new token and it
-  updates the existing one.
+- **The token changes, and when it does isn't worked out.** On the cooker tried, the token shown
+  after the reset was the one it had before, and it stopped working once the cooker had joined the
+  network. That is why this doesn't work yet.
 - **The TOKIT app won't see a cooker set up this way**, because it was never tied to an account. To
   go back to the app, reset the Wi-Fi again and set it up there.
 - **The cooker still calls its maker's cloud** once it's on a network with internet access. See

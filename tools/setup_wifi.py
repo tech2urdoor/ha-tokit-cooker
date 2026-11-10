@@ -27,9 +27,10 @@ ROOT = Path(__file__).resolve().parent.parent
 # The models the integration supports. tests/test_setup_wifi.py checks this matches const.py.
 MODELS = {"chunmi.ihcooker.cbhw"}
 
-# Where to say hello. A device in this state is the router of its own network, and these are the
-# addresses such devices are known to use. The last one is a broadcast, for any other address.
-SEARCH = ("192.168.4.1", "192.168.13.1", "192.168.8.1", "255.255.255.255")
+# Where to say hello. A device in this state is the router of its own network. The first address
+# is the one a real cooker used. The next three are ones other devices of this family are known to
+# use, and the last is a broadcast, for any other address.
+SEARCH = ("10.10.1.1", "192.168.4.1", "192.168.13.1", "192.168.8.1", "255.255.255.255")
 
 # A device already on a Wi-Fi network answers the hello with its token blanked out.
 BLANK = (b"\xff" * 16, b"\x00" * 16)
