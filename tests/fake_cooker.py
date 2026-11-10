@@ -5,14 +5,10 @@ It copies what a real cooker was seen to do:
 - a start command only selects the mode, and heating needs a press on the cooker itself;
 - power and temperature changes answer code 1 and change nothing while it's idle;
 - an action sent with plain values instead of {"piid": n, "value": v} gets a reply that isn't JSON;
-- a packet it can't decrypt gets no reply at all.
+- a packet it can't decrypt gets no reply at all;
+- a hello gets back ff bytes where the token would be, as it does from a cooker on Wi-Fi.
 
 Where a real cooker hasn't been seen (pausing while idle, say), this answers code 1.
-
-FakeCooker(provisioned=False) is a cooker whose Wi-Fi has been reset: its hello shows the token,
-and miIO.config_router gives it a network to join. A cooker on Wi-Fi was seen to blank that field
-with ff bytes. The reset state follows how the protocol is publicly described to work and has NOT
-been compared with a real cooker yet.
 """
 from __future__ import annotations
 
@@ -39,10 +35,8 @@ OFF, IDLE, COOKING, PAUSED = 5, 0, 1, 4
 
 
 class FakeCooker:
-    def __init__(self, token_hex: str = TOKEN, model: str = MODEL, provisioned: bool = True) -> None:
+    def __init__(self, token_hex: str = TOKEN, model: str = MODEL) -> None:
         self.model = model
-        self.provisioned = provisioned
-        self.router: dict[str, Any] | None = None  # what miIO.config_router was sent
         self._token = bytes.fromhex(token_hex)
         self._key = hashlib.md5(self._token).digest()
         self._iv = hashlib.md5(self._key + self._token).digest()
@@ -125,7 +119,7 @@ class FakeCooker:
                 continue
             if data == HELLO:
                 head = struct.pack(">HHI4sI", 0x2131, 32, 0, self._device_id, int(time.time()))
-                self._sock.sendto(head + (b"\xff" * 16 if self.provisioned else self._token), addr)
+                self._sock.sendto(head + b"\xff" * 16, addr)
                 continue
             try:
                 request = json.loads(self._decrypt(data[32:]))
@@ -139,10 +133,6 @@ class FakeCooker:
         result: Any
         if method == "miIO.info":
             result = {"model": self.model, "mac": MAC, "fw_ver": "2.2.0_0002"}
-        elif method == "miIO.config_router" and not self.provisioned:
-            self.router = params
-            self.provisioned = True
-            result = ["ok"]
         elif method == "get_properties":
             result = []
             for item in params:

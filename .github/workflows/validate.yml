@@ -29,7 +29,7 @@ jobs:
           comment: "false"
 
   tests:
-    name: Protocol and setup tests (Python ${{ matrix.python }})
+    name: Protocol tests (Python ${{ matrix.python }})
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
@@ -41,13 +41,11 @@ jobs:
         with:
           python-version: ${{ matrix.python }}
       - name: Every file compiles
-        run: python -m compileall -q custom_components/tokit_cooker/miio.py tools tests/fake_cooker.py tests/test_miio.py tests/test_setup_wifi.py
+        run: python -m compileall -q custom_components/tokit_cooker/miio.py tests/fake_cooker.py tests/test_miio.py
       - name: Install cryptography
         run: pip install cryptography
       - name: The protocol client against a pretend cooker
         run: python tests/test_miio.py
-      - name: Setup without the app against a pretend cooker
-        run: python tests/test_setup_wifi.py
 
   homeassistant:
     name: Runs in Home Assistant

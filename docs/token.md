@@ -1,11 +1,13 @@
-# Reading the token from a cooker already in the app
+# Reading the token from a cooker set up in the app
 
-If the cooker is set up in the TOKIT app and you'd rather leave it that way, its token can be read
-from an Android phone that has the app. Nothing on the cooker changes: no reset and no pairing.
+Once the cooker is set up in the TOKIT app, its token can be read from an Android phone that has the
+app. Nothing on the cooker changes: no reset and no pairing.
 
-This worked with version 1.5.2 of the app. A later version may behave differently. If you don't
-have an Android phone, or this stops working, [set the cooker up without the app](setup-without-the-app.md)
-instead.
+This worked with version 1.5.2 of the app, twice: on a cooker that had been in the app for a while,
+and again straight after the cooker was set up afresh. A later version may behave differently.
+
+It needs the app and an Android phone. No way of getting the token without the app has been found:
+[setting the cooker up without it](setup-without-the-app.md) can't work.
 
 ## Why it works
 
@@ -40,5 +42,8 @@ in the phone's developer options.
 ## Looking after the token
 
 Anyone on your network who has the token can control the cooker, within the limit that it won't heat
-without a press on its own button. Treat it like a password. It stays the same until the cooker is
-reset and set up again.
+without a press on its own button. Treat it like a password.
+
+It stays the same until the cooker is put on a Wi-Fi network again, by the app or by anything else.
+Resetting the cooker's Wi-Fi doesn't change it. Setting the Wi-Fi up afterwards does, every time, so
+after that you read the token again and give Home Assistant the new one.

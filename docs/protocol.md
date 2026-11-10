@@ -68,6 +68,16 @@ The menu property, 3.1, reads back as hex: four bytes, a menu number, the name i
 The first byte has been seen as 03 and 05. Menu numbers aren't mode numbers: modes 3, 4 and 5 are
 menus 04, 05 and 03.
 
+## Setup mode
+
+After a Wi-Fi reset the cooker restarts and opens a network of its own, with no password. It is that
+network's router, at `10.10.1.1`. There a hello gets back the token in full, and `miIO.info` works
+with it.
+
+`miIO.config_router` with `ssid`, `passwd` and `uid` gets no reply. The cooker closes its network,
+joins the one named, and from that moment answers only to a new token it has made for itself.
+[What that means for setup](setup-without-the-app.md).
+
 ## Traps
 
 - **Code 0 from start-cook doesn't mean it's heating.** It means the mode was selected. Watch
@@ -86,5 +96,3 @@ menus 04, 05 and 03.
 - Recipes and stepped programs (3.1 start-cooking, 3.5 set-menu).
 - Scheduling.
 - The limits of the target temperature. 80 was accepted, and the built-in modes use 155 to 199.
-- What the cooker does with its Wi-Fi reset. See
-  [setting it up without the app](setup-without-the-app.md).

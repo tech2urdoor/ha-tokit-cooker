@@ -1,84 +1,77 @@
 # Setting the cooker up without the app
 
 > [!WARNING]
-> **This doesn't work yet, and trying it will lock you out of the cooker until you set it up again.**
-> It has been tried once on a real cooker. [tools/setup_wifi.py](../tools/setup_wifi.py) found the
-> cooker on its own network, read a token and sent the Wi-Fi details, and the cooker joined the
-> network. It then stopped answering to that token, so nothing could read or control it. The way
-> back is to reset the Wi-Fi again and set the cooker up in the app.
+> **It can't be done, and trying it locks you out of the cooker.** A cooker in setup mode takes
+> Wi-Fi details from anything that sends them, the app or not. It then makes itself a new token and
+> shows it to nothing on your network. You're left with a cooker on your Wi-Fi that you can't read
+> or control, until you reset its Wi-Fi and set it up in the app.
 >
-> Running the script with `--check` is safe: it reads and changes nothing. Why the token stops
-> working is being looked into, and this page will say when the rest works.
+> That goes for any tool that sends `miIO.config_router`, python-miio's Wi-Fi command included.
 
-A cooker whose Wi-Fi has been reset opens a Wi-Fi network of its own and waits to be told which
-network to join. The app normally does the telling. The script does it instead, and while it's there
-it reads the cooker's token, which is the key Home Assistant needs. No account is made and nothing
-goes over the internet.
+The TOKIT app is needed once, to put the cooker on your Wi-Fi. After that you
+[read the token from the phone](token.md), and the app has no further part in it.
 
-## What you need
+This page is what was tried, so that nobody has to find it out again. It was done on one Induction
+Cooker Pro (TCL02M-3A, firmware 2.2.0_0002), whose Wi-Fi was reset four times in an evening.
+Release 0.1.0 of this repository carried a script for it, `tools/setup_wifi.py`. The script has been
+removed.
 
-- A computer with Wi-Fi and Python 3.9 or newer
-- A copy of this repository on it
-- One package: `pip install cryptography`
-- The name and password of a 2.4 GHz Wi-Fi network. The cooker can't join a 5 GHz one
+## What the cooker does after a Wi-Fi reset
 
-## Steps
+- It restarts and opens a Wi-Fi network of its own, with no password. The network's name starts
+  with `chunmi-ihcooker-cbhw_`. The cooker is that network's router, at `10.10.1.1`.
+- It answers a hello with its token in full. A cooker on Wi-Fi blanks that field.
+- **The token is the one it had before the reset.** A reset by itself doesn't change it.
+- It answers `miIO.info` sent with that token, giving its model, MAC address and firmware.
 
-1. **Reset the cooker's Wi-Fi**, the way its manual describes. It leaves your network, if it was on
-   one, and opens its own.
-2. **Join that network from the computer.** It has no password. Its name starts with the cooker's
-   model, `chunmi-ihcooker-cbhw_`. The computer will say it has no internet, which is right.
-3. **Run the script** from the repository folder:
+Up to here it's everything setup over an access point needs.
 
-   ```bash
-   python tools/setup_wifi.py
-   ```
+## What it does when it's given Wi-Fi details
 
-   It finds the cooker, shows its model, MAC address and firmware, and shows the token. Copy the
-   token somewhere safe now.
-4. **Type your Wi-Fi's name and password** when it asks. The password isn't shown as you type. The
-   cooker takes them, closes its own network and joins yours.
-5. **Join your own Wi-Fi again**, find the cooker in your router's list of devices by its MAC
-   address, and give it a fixed address.
-6. **Add the integration** in Home Assistant with that address and the token.
+This is `miIO.config_router` with `ssid`, `passwd` and `uid` 0, sent with the token the cooker had
+just shown:
 
-To look before you leap, `python tools/setup_wifi.py --check` finds the cooker and reads the token,
-then stops without changing anything.
+- It sends no reply.
+- It closes its own network at once. It doesn't restart.
+- It joins the Wi-Fi named within seconds.
+- **From that moment it ignores the token it had shown**, and a hello gets the blanked field.
 
-## Options
+| Try | Wi-Fi details sent | What happened |
+|---|---|---|
+| 1 | A real network | The cooker joined it. The token it had shown no longer worked |
+| 2 | The same, with its address on that network watched from the moment it appeared | The cooker joined it. Its first answer already had the token blanked, and it answered to none of the tokens it had shown so far |
+| 3 | A network that doesn't exist | The cooker closed its own network and didn't come back in five minutes. After another reset it showed a new token again |
 
-| Option | What it does |
-|---|---|
-| `--check` | Find the cooker and read its token, then stop |
-| `--ssid NAME` | The Wi-Fi network to put it on, instead of being asked |
-| `--token-file FILE` | Save the token in a file only you can read, instead of showing it |
-| `--host ADDRESS` | The cooker's address on its own network, if the script can't find it. It's the router address your Wi-Fi settings show while you're joined to the cooker. On the cooker tried, that was `10.10.1.1` |
+The third try settles it. On a network that isn't there the cooker could reach nothing, and its
+token changed all the same. **The cooker makes the new token itself, the moment it's given Wi-Fi
+details.** Nothing can ask it for that token afterwards, because every request has to be encrypted
+with the token you don't have.
 
-There is deliberately no option for the Wi-Fi password, so it never lands in your shell's history.
+## Why the app can do it
 
-## What the script sends
+Setting the cooker up in the app changes the token too: the one the cooker showed in setup mode
+wasn't the one it answered to afterwards. The difference is that the app is told the new one. Once
+the cooker is on a network with internet access it calls its maker's cloud, and the new token turns
+up in the list of devices the app fetches from that cloud for your account. That list is where
+[reading the token from the phone](token.md) gets it.
 
-Three things, all to the cooker and nowhere else:
+None of this is special to the cooker. The maintainer of python-miio, the best-known library for
+this family of devices, [put it](https://github.com/rytilahti/python-miio/issues/461) as "the token
+gets changed during provisioning", and says there is no known way to ask a device for it afterwards.
 
-1. A hello. A cooker in this state answers with its token. One already on a Wi-Fi network answers
-   with the token blanked out, and the script stops there.
-2. `miIO.info`, to check the model. It refuses to go on with anything but `chunmi.ihcooker.cbhw`.
-3. `miIO.config_router` with the network name, the password and `uid` 0.
+There is a sound reason for it. In setup mode the cooker's network is open and it hands its token
+to anyone in range who asks. A token that has been given out like that is thrown away as soon as
+setup happens.
 
-## Things to know
+## Not tried
 
-- **The token is shown once.** The script shows it before it sends the Wi-Fi details, because the
-  cooker's network disappears straight after. If you lose it, reset the Wi-Fi and start again.
-- **The cooker's own network is open.** The token crosses it unprotected, and the Wi-Fi password is
-  protected only by that token, so someone within radio range at that moment could read both. It
-  lasts the minute the setup takes, and it's how setup over an access point works for this whole
-  family of devices.
-- **The token changes, and when it does isn't worked out.** On the cooker tried, the token shown
-  after the reset was the one it had before, and it stopped working once the cooker had joined the
-  network. That is why this doesn't work yet.
-- **The TOKIT app won't see a cooker set up this way**, because it was never tied to an account. To
-  go back to the app, reset the Wi-Fi again and set it up there.
-- **The cooker still calls its maker's cloud** once it's on a network with internet access. See
-  [Keeping it local](../README.md#keeping-it-local).
-- **If the cooker never appears on your network**, the name or password was wrong, or the network is
-  5 GHz only. Reset its Wi-Fi and run the script again.
+- Reading the token out of the cooker's Wi-Fi chip. That means opening a mains appliance.
+- Catching what the cooker tells its maker's cloud.
+- Other firmware versions. If yours behaves differently, please
+  [open an issue](https://github.com/tech2urdoor/ha-tokit-cooker/issues).
+
+## If you've already tried it
+
+Reset the cooker's Wi-Fi again, set it up in the TOKIT app, and [read the new token](token.md). Then
+add the integration again in Home Assistant with the new token: it updates the cooker that's already
+there.

@@ -2,8 +2,9 @@
 
 # TOKIT Induction Cooker for Home Assistant
 
-Read and control a TOKIT Induction Cooker Pro from Home Assistant over your own network, with no
-app, account or cloud. It's a community project and is [not affiliated with TOKIT](#disclaimer).
+Read and control a TOKIT Induction Cooker Pro from Home Assistant over your own network. The TOKIT
+app is needed once, to put the cooker on your Wi-Fi. After that there is no app, account or cloud in
+it. It's a community project and is [not affiliated with TOKIT](#disclaimer).
 
 > [!WARNING]
 > **Status: early, and run on one cooker only.** On an Induction Cooker Pro (TCL02M-3A, firmware
@@ -11,10 +12,11 @@ app, account or cloud. It's a community project and is [not affiliated with TOKI
 > Assistant. With a pot of water heating, power level, target temperature, pause, resume and stop
 > all worked when sent from a script using the same protocol code.
 > Not done yet on a real cooker: pressing those controls from Home Assistant while it heats.
-> [Setting it up without the app](docs/setup-without-the-app.md) **doesn't work yet**: tried on the
-> real cooker, it put the cooker on the Wi-Fi and left it answering to no known token. Apart from
-> that attempt, the code in this release has run against a simulated cooker only. The table under
+> The code in this release has itself run against a simulated cooker only. The table under
 > [What has been seen](#what-has-been-seen) keeps score.
+>
+> **The cooker can't be set up without the TOKIT app.** That was tried on the real cooker, and it
+> locks you out of it. [What was tried, and why it can't work](docs/setup-without-the-app.md).
 
 **It can't start the heat, and that is the cooker's doing.** A start command over the network only
 wakes the cooker and selects a mode. It then waits for a press on its own button before it heats.
@@ -68,16 +70,17 @@ before you write one, and prefer automations that only lower the heat, pause or 
 ## Getting the cooker ready
 
 Home Assistant needs two things: the cooker's address on your network, and its **token**, a
-32-character key every device of this family has. There are two ways to get there.
+32-character key every device of this family has.
 
-- **Without the app.** Reset the cooker's Wi-Fi, join the network it opens, and run a script from
-  this repository. It reads the token and puts the cooker on your Wi-Fi, with no account anywhere.
-  [How it's meant to go](docs/setup-without-the-app.md). **It doesn't work yet**, so read the
-  warning there before you try it.
-- **With a cooker already set up in the TOKIT app.** It stays as it is, and you
-  [read its token from an Android phone](docs/token.md). This is how the one cooker here was done.
+1. **Set the cooker up in the TOKIT app**, if it isn't already. This is the one step that needs the
+   app and an account. The cooker makes itself a new token whenever it's put on a Wi-Fi network, and
+   only the app is told what it is. There's
+   [no way round that](docs/setup-without-the-app.md).
+2. **[Read the token from an Android phone](docs/token.md)** that has the app.
+3. **Give the cooker a fixed address** in your router.
 
-Either way, give the cooker a fixed address in your router afterwards.
+After that the app has no part in it. You'd need it again only if the cooker's Wi-Fi were set up
+afresh, because that changes the token.
 
 ## Install
 
@@ -120,7 +123,8 @@ yet, and it will stop the TOKIT app working with it.
 | Power level and target temperature while heating | Yes | From a script. Not yet from Home Assistant |
 | Pause, resume and stop while heating | Yes | From a script. Not yet from Home Assistant |
 | Power and temperature refused while idle | Yes | In Home Assistant, and the cooker itself refuses too |
-| Setup without the app | No | Tried once. The cooker joined the Wi-Fi, then stopped answering to the token it had shown |
+| Reading the token from the phone, and again after the cooker was set up afresh | Yes | Both times with version 1.5.2 of the app |
+| Setup without the app | No | It can't work. The cooker makes a new token when it's given Wi-Fi details, and shows it to nothing on the network |
 | Fault reporting | No | No fault has happened yet |
 | Working with the cooker's internet access blocked | No | |
 
@@ -133,13 +137,13 @@ showed you when it refused.
 
 ## Docs
 
-- [Setting it up without the app](docs/setup-without-the-app.md)
-- [Reading the token from a cooker already in the app](docs/token.md)
+- [Reading the token from a cooker set up in the app](docs/token.md)
+- [Setting it up without the app](docs/setup-without-the-app.md): why it can't be done
 - [The protocol](docs/protocol.md): what the cooker understands, and the traps
 
-To run the tests: `python tests/test_miio.py` and `python tests/test_setup_wifi.py` need only
-`cryptography`. `pytest` needs `pytest-homeassistant-custom-component`. None of them touches a real
-cooker: they talk to a pretend one in [tests/fake_cooker.py](tests/fake_cooker.py).
+To run the tests: `python tests/test_miio.py` needs only `cryptography`, and `pytest` needs
+`pytest-homeassistant-custom-component`. Neither touches a real cooker: they talk to a pretend one
+in [tests/fake_cooker.py](tests/fake_cooker.py).
 
 ## Disclaimer
 
