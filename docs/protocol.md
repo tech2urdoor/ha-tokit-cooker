@@ -13,7 +13,7 @@ Inside is JSON using the "MIoT spec" methods `get_properties` and `action`. Ever
 service number and a property number, written here as `3.7`. The numbers come from the cooker's
 published spec, `urn:miot-spec-v2:device:induction-cooker:0000A033:chunmi-cbhw:1`.
 
-[miio.py](../custom_components/tokit_cooker/miio.py) is the whole client, in about 130 lines.
+[miio.py](../custom_components/tokit_induction_cooker/miio.py) is the whole client, in about 130 lines.
 
 ## Properties
 

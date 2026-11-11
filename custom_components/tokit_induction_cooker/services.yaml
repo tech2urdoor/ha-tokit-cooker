@@ -15,4 +15,4 @@ select_mode:
       required: false
       selector:
         device:
-          integration: tokit_cooker
+          integration: tokit_induction_cooker

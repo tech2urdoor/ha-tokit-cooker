@@ -1,4 +1,4 @@
-<img src="custom_components/tokit_cooker/brand/icon.png" alt="" width="96" align="right">
+<img src="custom_components/tokit_induction_cooker/brand/icon.png" alt="" width="96" align="right">
 
 # TOKIT Induction Cooker for Home Assistant
 
@@ -12,8 +12,9 @@ it. It's a community project and is [not affiliated with TOKIT](#disclaimer).
 > Assistant. With a pot of water heating, power level, target temperature, pause, resume and stop
 > all worked when sent from a script using the same protocol code.
 > Not done yet on a real cooker: pressing those controls from Home Assistant while it heats.
-> The code in this release has itself run against a simulated cooker only. The table under
-> [What has been seen](#what-has-been-seen) keeps score.
+> Release 0.2.0 read the cooker from Home Assistant while it wasn't cooking. This release is the same code
+> under a new name, and everything new since the earlier build has otherwise run against a
+> simulated cooker only. The table under [What has been seen](#what-has-been-seen) keeps score.
 >
 > **The cooker can't be set up without the TOKIT app.** That was tried on the real cooker, and it
 > locks you out of it. [What was tried, and why it can't work](docs/setup-without-the-app.md).
@@ -34,7 +35,7 @@ Once someone has pressed it, everything else can be done from Home Assistant.
 | `Fault`, `Problem` | No pan, mains voltage too high or low, surface or electronics too hot, sensor faults, coil disconnected |
 | `Power level` and `Target temperature` controls | A slider and a box. They work only while the cooker is cooking or paused, and refuse otherwise |
 | `Stop`, `Pause`, `Resume` buttons | Stop ends the cook and leaves the cooker idle. It doesn't switch it off |
-| `tokit_cooker.select_mode` action | Wakes the cooker and selects hotpot, steam or boil, stir fry, fry, or soup or congee. The cooker then waits for its button |
+| `tokit_induction_cooker.select_mode` action | Wakes the cooker and selects hotpot, steam or boil, stir fry, fry, or soup or congee. The cooker then waits for its button |
 
 Three more diagnostic sensors (`Detailed status`, `Program type`, `Phase`) are there but disabled.
 
@@ -85,7 +86,9 @@ afresh, because that changes the token.
 
 ## Install
 
-Needs Home Assistant 2025.6 or newer. It has only been run on 2026.10.
+Needs Home Assistant 2025.6 or newer. It has only been run on 2026.10 and 2026.11.
+
+If you already have release 0.2.0 or older, read [Coming from 0.2.0 or older](#coming-from-020-or-older) first.
 
 ### With HACS
 
@@ -94,9 +97,11 @@ Needs Home Assistant 2025.6 or newer. It has only been run on 2026.10.
 2. Find **TOKIT Induction Cooker** in HACS and download it.
 3. Restart Home Assistant.
 
+Home Assistant 2026.11 replaced HACS with its own Marketplace. It takes the same custom repository.
+
 ### By hand
 
-Copy `custom_components/tokit_cooker` into the `custom_components` folder of your Home Assistant
+Copy `custom_components/tokit_induction_cooker` into the `custom_components` folder of your Home Assistant
 configuration, then restart.
 
 ### Then
@@ -111,6 +116,22 @@ its menu, and give it the new one. If the cooker's address changes, Home Assista
 For a bug report, **Download diagnostics** on the same page gives the cooker's model, firmware and
 last readings. The token, the addresses and your Wi-Fi's name are left out of it.
 
+### Coming from 0.2.0 or older
+
+Release 0.3.0 renamed the integration from `tokit_cooker` to `tokit_induction_cooker`. An
+integration for a TOKIT rice cooker already used the old name, and Home Assistant allows one
+integration per name. Home Assistant sees the renamed one as a new integration, so the cooker has to
+be removed and added again:
+
+1. Have the cooker's token to hand. Removing the cooker from Home Assistant throws its copy away.
+2. Under **Settings → Devices & services**, delete the cooker from the old integration.
+3. Install this release, and delete the old `custom_components/tokit_cooker` folder if it is still
+   there.
+4. Restart Home Assistant and add the cooker again, as under [Then](#then).
+
+The action is now `tokit_induction_cooker.select_mode`, so change any automation or script that
+calls the old one. Nothing else about the entities was renamed.
+
 ## Keeping it local
 
 Nothing in this integration talks to anything but the cooker. The cooker is another matter: on
@@ -124,7 +145,7 @@ yet, and it will stop the TOKIT app working with it.
 
 | | Seen | How |
 |---|---|---|
-| Reading status, temperature, target, power level and time | Yes | In Home Assistant, with an earlier build |
+| Reading status, temperature, target, power level and time | Yes | In Home Assistant: through a cook with an earlier build, and not cooking with release 0.2.0 |
 | Selecting each of the five modes | Yes | Hotpot from Home Assistant, all five from a script |
 | The cooker waiting for its button after a mode is selected | Yes | Every time |
 | Power level and target temperature while heating | Yes | From a script. Not yet from Home Assistant |

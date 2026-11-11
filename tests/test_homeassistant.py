@@ -21,9 +21,9 @@ from homeassistant.helpers.service_info.dhcp import DhcpServiceInfo
 from homeassistant.util import dt as dt_util
 from pytest_homeassistant_custom_component.common import MockConfigEntry, async_fire_time_changed
 
-from custom_components.tokit_cooker import config_flow, miio
-from custom_components.tokit_cooker.const import DOMAIN
-from custom_components.tokit_cooker.diagnostics import async_get_config_entry_diagnostics
+from custom_components.tokit_induction_cooker import config_flow, miio
+from custom_components.tokit_induction_cooker.const import DOMAIN
+from custom_components.tokit_induction_cooker.diagnostics import async_get_config_entry_diagnostics
 
 UNIQUE = MAC.lower()
 ENTRY_DATA = {"host": "127.0.0.1", "token": TOKEN}

@@ -5,7 +5,7 @@ urn:miot-spec-v2:device:induction-cooker:0000A033:chunmi-cbhw:1
 """
 from datetime import timedelta
 
-DOMAIN = "tokit_cooker"
+DOMAIN = "tokit_induction_cooker"
 
 # Models this has been seen working on. Every number below comes from this one model's spec,
 # and the same numbers sent to a different hob could mean something else, so setup refuses

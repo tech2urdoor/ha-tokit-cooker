@@ -16,7 +16,7 @@ from fake_cooker import MAC, MODEL, TOKEN, FakeCooker  # noqa: E402
 
 # Loaded by path, so the package's __init__ (which needs Home Assistant) isn't imported.
 _spec = importlib.util.spec_from_file_location(
-    "tokit_miio", HERE.parent / "custom_components" / "tokit_cooker" / "miio.py"
+    "tokit_miio", HERE.parent / "custom_components" / "tokit_induction_cooker" / "miio.py"
 )
 miio = importlib.util.module_from_spec(_spec)
 sys.modules["tokit_miio"] = miio

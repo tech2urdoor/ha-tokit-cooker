@@ -13,12 +13,12 @@ import sys
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
-PACKAGE = "custom_components.tokit_cooker"
+PACKAGE = "custom_components.tokit_induction_cooker"
 
 
 def main() -> int:
     sys.path.insert(0, str(ROOT))
-    modules = sorted((ROOT / "custom_components" / "tokit_cooker").glob("*.py"))
+    modules = sorted((ROOT / "custom_components" / "tokit_induction_cooker").glob("*.py"))
     failed = 0
     for path in modules:
         name = PACKAGE if path.stem == "__init__" else f"{PACKAGE}.{path.stem}"

@@ -26,7 +26,7 @@ def _custom_integrations(request: pytest.FixtureRequest) -> None:
 @pytest.fixture
 def cooker(socket_enabled: None, monkeypatch: pytest.MonkeyPatch):
     """A pretend cooker on a local port, with the integration pointed at it."""
-    from custom_components.tokit_cooker import miio
+    from custom_components.tokit_induction_cooker import miio
 
     with FakeCooker() as fake:
         monkeypatch.setattr(miio, "PORT", fake.port)

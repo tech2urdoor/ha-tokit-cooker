@@ -41,7 +41,7 @@ jobs:
         with:
           python-version: ${{ matrix.python }}
       - name: Every file compiles
-        run: python -m compileall -q custom_components/tokit_cooker/miio.py tests/fake_cooker.py tests/test_miio.py
+        run: python -m compileall -q custom_components/tokit_induction_cooker/miio.py tests/fake_cooker.py tests/test_miio.py
       - name: Install cryptography
         run: pip install cryptography
       - name: The protocol client against a pretend cooker
