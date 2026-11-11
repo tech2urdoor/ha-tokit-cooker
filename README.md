@@ -12,9 +12,10 @@ it. It's a community project and is [not affiliated with TOKIT](#disclaimer).
 > Assistant. With a pot of water heating, power level, target temperature, pause, resume and stop
 > all worked when sent from a script using the same protocol code.
 > Not done yet on a real cooker: pressing those controls from Home Assistant while it heats.
-> Release 0.2.0 read the cooker from Home Assistant while it wasn't cooking. This release is the same code
-> under a new name, and everything new since the earlier build has otherwise run against a
-> simulated cooker only. The table under [What has been seen](#what-has-been-seen) keeps score.
+> This release has read the cooker from Home Assistant while it wasn't cooking, and Home Assistant
+> found the cooker by itself. Reconfigure, diagnostics and following a change of address have run
+> against a simulated cooker only. The table under [What has been seen](#what-has-been-seen) keeps
+> score.
 >
 > **The cooker can't be set up without the TOKIT app.** That was tried on the real cooker, and it
 > locks you out of it. [What was tried, and why it can't work](docs/setup-without-the-app.md).
@@ -107,8 +108,8 @@ configuration, then restart.
 ### Then
 
 **Settings → Devices & services → Add integration → TOKIT Induction Cooker**, and give it the
-address and the token. Home Assistant may also find the cooker by itself when the cooker joins the
-network, and then it asks only for the token.
+address and the token. Home Assistant may also find the cooker by itself, and then its form comes
+with the address filled in and needs only the token.
 
 If the token ever changes, open the cooker under **Devices & services**, choose **Reconfigure** from
 its menu, and give it the new one. If the cooker's address changes, Home Assistant follows it.
@@ -125,12 +126,16 @@ be removed and added again:
 
 1. Have the cooker's token to hand. Removing the cooker from Home Assistant throws its copy away.
 2. Under **Settings → Devices & services**, delete the cooker from the old integration.
-3. Install this release, and delete the old `custom_components/tokit_cooker` folder if it is still
-   there.
-4. Restart Home Assistant and add the cooker again, as under [Then](#then).
+3. Install this release. Home Assistant 2026.11's Marketplace won't update across the change of
+   name: it says to uninstall the repository and install it again, and uninstalling removes the old
+   folder. HACS wasn't tried. By hand, delete the old `custom_components/tokit_cooker` folder.
+4. Restart Home Assistant and add the cooker again, as under [Then](#then). If Home Assistant has
+   found the cooker by itself after the restart, use the form it offers: adding it by hand is
+   refused while that one is open.
 
 The action is now `tokit_induction_cooker.select_mode`, so change any automation or script that
-calls the old one. Nothing else about the entities was renamed.
+calls the old one. Nothing else about the entities was renamed. On the one cooker this was done
+with, every entity came back under the id it had before, and its history carried on.
 
 ## Keeping it local
 
@@ -145,7 +150,7 @@ yet, and it will stop the TOKIT app working with it.
 
 | | Seen | How |
 |---|---|---|
-| Reading status, temperature, target, power level and time | Yes | In Home Assistant: through a cook with an earlier build, and not cooking with release 0.2.0 |
+| Reading status, temperature, target, power level and time | Yes | In Home Assistant: through a cook with an earlier build, and not cooking with this release |
 | Selecting each of the five modes | Yes | Hotpot from Home Assistant, all five from a script |
 | The cooker waiting for its button after a mode is selected | Yes | Every time |
 | Power level and target temperature while heating | Yes | From a script. Not yet from Home Assistant |
@@ -153,7 +158,8 @@ yet, and it will stop the TOKIT app working with it.
 | Power and temperature refused while idle | Yes | In Home Assistant, and the cooker itself refuses too |
 | Reading the token from the phone, and again after the cooker was set up afresh | Yes | Both times with version 1.5.2 of the app |
 | Setup without the app | No | It can't work. The cooker makes a new token when it's given Wi-Fi details, and shows it to nothing on the network |
-| Home Assistant finding the cooker by itself, and following a change of address | No | Run against a simulated cooker only |
+| Home Assistant finding the cooker by itself | Yes | After a restart of Home Assistant 2026.11, with the address filled in |
+| Home Assistant following a change of address | No | Run against a simulated cooker only |
 | Reconfigure with a new token | No | Run against a simulated cooker only |
 | Fault reporting | No | No fault has happened yet |
 | Working with the cooker's internet access blocked | No | |
