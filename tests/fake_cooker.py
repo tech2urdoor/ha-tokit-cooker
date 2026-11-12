@@ -7,6 +7,7 @@ It copies what a real cooker was seen to do:
 - an action sent with plain values instead of {"piid": n, "value": v} gets a reply that isn't JSON;
 - a packet it can't decrypt gets no reply at all;
 - a hello gets back ff bytes where the token would be, as it does from a cooker on Wi-Fi.
+- writing a property it lets you write (3.25, the beeper) answers code 0.
 
 Where a real cooker hasn't been seen (pausing while idle, say), this answers code 1.
 """
@@ -33,6 +34,9 @@ MODE_TARGETS = {1: 185, 2: 180, 3: 199, 4: 199, 5: 155}
 
 OFF, IDLE, COOKING, PAUSED = 5, 0, 1, 4
 
+# The properties the spec lets you write: finish-push, buzzer-mark and hotpot-mode.
+WRITABLE = {(3, 24), (3, 25), (3, 35)}
+
 
 class FakeCooker:
     def __init__(self, token_hex: str = TOKEN, model: str = MODEL) -> None:
@@ -54,8 +58,10 @@ class FakeCooker:
             (3, 8): 0,  # target-temperature
             (3, 9): 0,  # fire-gears
             (3, 15): 0,  # recipe-type
+            (3, 25): False,  # buzzer-mark, the beeper setting
         }
         self.actions: list[tuple[int, int, list[Any]]] = []
+        self.writes: list[tuple[tuple[int, int], Any]] = []
         self.requests: list[dict[str, Any]] = []
         self.silent = False
         self._sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
@@ -151,6 +157,17 @@ class FakeCooker:
                 if known:
                     answer["value"] = self.props[pair]
                 result.append(answer)
+        elif method == "set_properties":
+            # A real cooker took 3.25 written with the value it already had, and answered code 0.
+            # What it answers for a property the spec doesn't let you write is a guess.
+            result = []
+            for item in params:
+                pair = (item["siid"], item["piid"])
+                writable = pair in WRITABLE
+                if writable:
+                    self.props[pair] = item["value"]
+                    self.writes.append((pair, item["value"]))
+                result.append({"did": item["did"], "siid": pair[0], "piid": pair[1], "code": 0 if writable else -4004})
         elif method == "action":
             inputs = params.get("in", [])
             if any(not isinstance(item, dict) for item in inputs):

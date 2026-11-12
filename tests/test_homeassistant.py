@@ -10,6 +10,7 @@ from datetime import timedelta
 from unittest import mock
 
 import pytest
+import fake_cooker
 from fake_cooker import MAC, TOKEN, FakeCooker
 from homeassistant.config_entries import SOURCE_DHCP, SOURCE_USER, ConfigEntryState
 from homeassistant.core import HomeAssistant
@@ -83,6 +84,7 @@ async def test_the_controls_are_there_without_being_enabled_by_hand(hass: HomeAs
         ("button", "stop"),
         ("button", "pause"),
         ("button", "resume"),
+        ("switch", "muted"),
     ):
         assert hass.states.get(_entity_id(hass, platform, key)) is not None, key
     await _remove(hass, entry)
@@ -176,24 +178,52 @@ async def test_the_controls_once_someone_has_pressed_start(hass: HomeAssistant, 
     assert cooker.actions[-1] == (3, 14, [{"piid": 8, "value": 80}, *NO_NAMES])
     assert cooker.props[(3, 8)] == 80
 
+    # Each command is read back at once, even straight after another: no refresh by hand here.
     await press("pause")
     assert cooker.actions[-1] == (2, 3, [])
     assert cooker.status == 4
-    await _refresh(hass, entry)
     assert _state(hass, "sensor", "status") == "paused"
     assert _state(hass, "binary_sensor", "heating") == "off"
 
     await press("resume")
     assert cooker.actions[-1] == (3, 3, NO_NAMES)
     assert cooker.status == 1
+    assert _state(hass, "sensor", "status") == "cooking"
 
     await press("stop")
     assert cooker.actions[-1] == (2, 2, [])
     assert cooker.status == 0
-    await _refresh(hass, entry)
     assert _state(hass, "sensor", "status") == "idle"
     assert _state(hass, "sensor", "power_level") == "0"
     assert len(cooker.actions) == 5
+    await _remove(hass, entry)
+
+
+async def test_mute_writes_the_beeper_setting_and_nothing_else(hass: HomeAssistant, cooker: FakeCooker) -> None:
+    entry = await _add(hass)
+    switch = _entity_id(hass, "switch", "muted")
+    assert hass.states.get(switch).state == "off"
+    await hass.services.async_call("switch", "turn_on", {"entity_id": switch}, blocking=True)
+    assert cooker.writes == [((3, 25), True)]
+    assert hass.states.get(switch).state == "on"
+    await hass.services.async_call("switch", "turn_off", {"entity_id": switch}, blocking=True)
+    assert cooker.writes == [((3, 25), True), ((3, 25), False)]
+    assert hass.states.get(switch).state == "off"
+    assert cooker.actions == []
+    assert cooker.status == 5, "muting must not wake the cooker"
+    await _remove(hass, entry)
+
+
+async def test_a_write_the_cooker_turns_down_is_an_error(
+    hass: HomeAssistant, cooker: FakeCooker, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    monkeypatch.setattr(fake_cooker, "WRITABLE", set())
+    entry = await _add(hass)
+    with pytest.raises(HomeAssistantError):
+        await hass.services.async_call(
+            "switch", "turn_on", {"entity_id": _entity_id(hass, "switch", "muted")}, blocking=True
+        )
+    assert _state(hass, "switch", "muted") == "off"
     await _remove(hass, entry)
 
 

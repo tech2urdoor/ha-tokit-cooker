@@ -48,10 +48,19 @@ class TokitCoordinator(DataUpdateCoordinator[dict[str, Any]]):
             await self.hass.async_add_executor_job(self.device.action, action[0], action[1], inputs or [])
         except MiioError as err:
             raise HomeAssistantError(f"The cooker didn't accept that: {err}") from err
-        await self.async_request_refresh()
-        self._read_again_soon()
+        await self._read_now_and_again_soon()
 
-    def _read_again_soon(self) -> None:
+    async def async_set_property(self, prop: tuple[int, int], value: Any) -> None:
+        try:
+            await self.hass.async_add_executor_job(self.device.set_property, prop[0], prop[1], value)
+        except MiioError as err:
+            raise HomeAssistantError(f"The cooker didn't accept that: {err}") from err
+        await self._read_now_and_again_soon()
+
+    async def _read_now_and_again_soon(self) -> None:
+        # Not async_request_refresh: its debouncer skips the read for a second command within
+        # ten seconds of the first, so pause then resume would show "paused" until the follow-up.
+        await self.async_refresh()
         if self._cancel_follow_up:
             self._cancel_follow_up()
         self._cancel_follow_up = async_call_later(self.hass, FOLLOW_UP_SECONDS, self._follow_up)

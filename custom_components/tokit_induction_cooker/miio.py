@@ -110,6 +110,14 @@ class MiioDevice:
                     out[(item["siid"], item["piid"])] = item.get("value")
         return out
 
+    def set_property(self, siid: int, piid: int, value: Any) -> None:
+        """Write one property. Only the few the spec marks writable are accepted."""
+        result = self.send(
+            "set_properties", [{"did": f"set-{siid}-{piid}", "siid": siid, "piid": piid, "value": value}]
+        )
+        if not isinstance(result, list) or not result or result[0].get("code") != 0:
+            raise MiioError(f"property {siid}.{piid} was refused: {result}")
+
     def action(self, siid: int, aiid: int, inputs: list[tuple[int, Any]]) -> dict[str, Any]:
         """Call an action. Inputs are (piid, value) pairs."""
         result = self.send(

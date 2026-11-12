@@ -9,9 +9,9 @@ Xiaomi's miIO, on UDP port 54321. Each packet is a 32-byte header and an AES-128
 key is the MD5 of the device's token, and the IV is the MD5 of key + token. A plain hello packet
 gets back the device id and a timestamp, which every later packet must carry.
 
-Inside is JSON using the "MIoT spec" methods `get_properties` and `action`. Every value has a
-service number and a property number, written here as `3.7`. The numbers come from the cooker's
-published spec, `urn:miot-spec-v2:device:induction-cooker:0000A033:chunmi-cbhw:1`.
+Inside is JSON using the "MIoT spec" methods `get_properties`, `set_properties` and `action`. Every
+value has a service number and a property number, written here as `3.7`. The numbers come from the
+cooker's published spec, `urn:miot-spec-v2:device:induction-cooker:0000A033:chunmi-cbhw:1`.
 
 [miio.py](../custom_components/tokit_induction_cooker/miio.py) is the whole client, in about 130 lines.
 
@@ -29,8 +29,12 @@ published spec, `urn:miot-spec-v2:device:induction-cooker:0000A033:chunmi-cbhw:1
 | 3.7 temperature, 3.8 target-temperature | °C |
 | 3.9 fire-gears | Power level, 0 to 99 |
 | 3.15 recipe-type | 0 built-in mode, 1 fixed power, 2 stepped power, 3 fixed temperature, 4 recipe |
-| 3.24, 3.25 | Notify when finished, mute the beeper. The only two that can be written directly. Not used here |
+| 3.24 finish-push | By its name, a notification through the cloud when a cook ends. Not used here |
+| 3.25 buzzer-mark | The beeper setting, behind the `Mute` switch. A write of the value it already had was accepted with code 0. Which way round it is hasn't been checked |
 | 3.29 move-temperature | A second temperature some modes carry. Soup has 90 |
+| 3.35 hotpot-mode | 0 boil, 1 warm. Not used here |
+
+3.24, 3.25 and 3.35 are the only properties the spec lets you write with `set_properties`.
 
 ## Actions
 

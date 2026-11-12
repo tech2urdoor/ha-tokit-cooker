@@ -36,12 +36,17 @@ Once someone has pressed it, everything else can be done from Home Assistant.
 | `Fault`, `Problem` | No pan, mains voltage too high or low, surface or electronics too hot, sensor faults, coil disconnected |
 | `Power level` and `Target temperature` controls | A slider and a box. They work only while the cooker is cooking or paused, and refuse otherwise |
 | `Stop`, `Pause`, `Resume` buttons | Stop ends the cook and leaves the cooker idle. It doesn't switch it off |
+| `Mute` switch | The cooker's beeper setting, under the device's configuration. Not yet tried on a real cooker |
 | `tokit_induction_cooker.select_mode` action | Wakes the cooker and selects hotpot, steam or boil, stir fry, fry, or soup or congee. The cooker then waits for its button |
 
 Three more diagnostic sensors (`Detailed status`, `Program type`, `Phase`) are there but disabled.
 
 It reads the cooker every 10 seconds, and every 5 while it is cooking or paused. After a command
 it reads at once, and once more two seconds later.
+
+For a message when a cook ends, a stop after a set time, or a warning when the hob has been left on,
+see [Automations](docs/automations.md). Home Assistant does those itself, so they work without the
+app or the cloud.
 
 ## What it doesn't do
 
@@ -65,7 +70,7 @@ mistake:
   neither can be the first thing sent.
 - The target temperature is capped at 200 °C. The built-in modes use 155 to 199.
 - Selecting a mode is an action, not a switch, so nothing can turn it on as part of a group or a
-  scene.
+  scene. The one switch, `Mute`, writes the beeper setting and nothing else.
 
 An automation can still raise the power of something that is already cooking. Think about that
 before you write one, and prefer automations that only lower the heat, pause or stop.
@@ -142,7 +147,12 @@ with, every entity came back under the id it had before, and its history carried
 Nothing in this integration talks to anything but the cooker. The cooker is another matter: on
 Wi-Fi with internet access it still calls its maker's cloud by itself. To stop that, block its
 internet access at your router and leave it reachable on your network. That hasn't been tried here
-yet, and it will stop the TOKIT app working with it.
+yet.
+
+The block stops the TOKIT app reaching the cooker, and nothing in Home Assistant needs the app once
+it has the token. The app is needed again only if the cooker's Wi-Fi is ever set up afresh, which
+gives it a new token: lift the block, set it up in the app, [read the new
+token](docs/token.md), give it to Home Assistant with **Reconfigure**, and put the block back.
 
 ## What has been seen
 
@@ -161,6 +171,7 @@ yet, and it will stop the TOKIT app working with it.
 | Home Assistant finding the cooker by itself | Yes | After a restart of Home Assistant 2026.11, with the address filled in |
 | Home Assistant following a change of address | No | Run against a simulated cooker only |
 | Reconfigure with a new token | No | Run against a simulated cooker only |
+| The `Mute` switch | No | Not tried on a real cooker yet, so which way round it is isn't known |
 | Fault reporting | No | No fault has happened yet |
 | Working with the cooker's internet access blocked | No | |
 
@@ -174,6 +185,8 @@ showed you when it refused.
 ## Docs
 
 - [Reading the token from a cooker set up in the app](docs/token.md)
+- [Automations](docs/automations.md): a message when a cook ends, a stop after a set time, a warning
+  when it's been left on
 - [Setting it up without the app](docs/setup-without-the-app.md): why it can't be done
 - [The protocol](docs/protocol.md): what the cooker understands, and the traps
 

@@ -19,7 +19,10 @@ ACTIVE_INTERVAL = timedelta(seconds=5)
 # it hadn't caught up. Whether a real cooker ever lags like that hasn't been measured.
 FOLLOW_UP_SECONDS = 2
 
-# key: (siid, piid). Eleven properties, so one request reads the lot.
+# The beeper setting, buzzer-mark in the spec. One of the three properties it lets you write.
+PROP_MUTED = (3, 25)
+
+# key: (siid, piid). Twelve properties, the most one request has been seen to read.
 PROPERTIES = {
     "status": (2, 1),
     "fault": (2, 2),
@@ -32,6 +35,7 @@ PROPERTIES = {
     "power_level": (3, 9),
     "recipe_type": (3, 15),
     "menu": (3, 1),
+    "muted": PROP_MUTED,
 }
 
 STATUS = {0: "idle", 1: "cooking", 2: "timing", 3: "scheduled", 4: "paused", 5: "off"}

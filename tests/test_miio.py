@@ -71,6 +71,16 @@ class MiioTest(unittest.TestCase):
         self.device.action(3, 13, [(9, 30), (20, ""), (19, "")])
         self.assertEqual(self.cooker.props[(3, 9)], 30)
 
+    def test_writes_a_property(self) -> None:
+        self.device.set_property(3, 25, True)
+        self.assertEqual(self.cooker.writes, [((3, 25), True)])
+        self.assertEqual(self.device.get_properties([(3, 25)]), {(3, 25): True})
+
+    def test_a_property_that_cannot_be_written_is_an_error(self) -> None:
+        with self.assertRaises(miio.MiioError):
+            self.device.set_property(3, 9, 50)
+        self.assertEqual(self.cooker.props[(3, 9)], 0)
+
     def test_plain_values_get_a_reply_that_is_not_json(self) -> None:
         with self.assertRaises(miio.MiioError) as caught:
             self.device.send("action", {"did": "x", "siid": 2, "aiid": 1, "in": [1]})

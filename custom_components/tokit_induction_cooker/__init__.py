@@ -15,7 +15,7 @@ from .const import ACTION_START_COOK, COOK_MODES, DOMAIN, PIID_COOK_MODE
 from .coordinator import TokitConfigEntry, TokitCoordinator
 from .miio import MiioDevice, MiioError
 
-PLATFORMS = [Platform.BINARY_SENSOR, Platform.BUTTON, Platform.NUMBER, Platform.SENSOR]
+PLATFORMS = [Platform.BINARY_SENSOR, Platform.BUTTON, Platform.NUMBER, Platform.SENSOR, Platform.SWITCH]
 CONFIG_SCHEMA = cv.config_entry_only_config_schema(DOMAIN)
 
 SERVICE_SELECT_MODE = "select_mode"

@@ -124,6 +124,11 @@
       "resume": {
         "name": "Resume"
       }
+    },
+    "switch": {
+      "muted": {
+        "name": "Mute"
+      }
     }
   },
   "selector": {
