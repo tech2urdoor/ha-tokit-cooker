@@ -199,6 +199,64 @@ async def test_the_controls_once_someone_has_pressed_start(hass: HomeAssistant, 
     await _remove(hass, entry)
 
 
+async def test_the_status_follows_work_status_when_2_1_is_stuck(hass: HomeAssistant, cooker: FakeCooker) -> None:
+    # A real cooker with its internet access blocked kept 2.1 at 5 (off) through all of this.
+    cooker.status_stuck = True
+    entry = await _add(hass)
+
+    async def call(domain: str, service: str, data: dict) -> None:
+        await hass.services.async_call(domain, service, data, blocking=True)
+        await hass.async_block_till_done()
+
+    await call(DOMAIN, "select_mode", {"mode": "hotpot"})
+    assert _state(hass, "sensor", "status") == "idle"
+    cooker.press_start()
+    await _refresh(hass, entry)
+    assert _state(hass, "sensor", "status") == "cooking"
+    assert _state(hass, "binary_sensor", "heating") == "on"
+    await call("number", "set_value", {"entity_id": _entity_id(hass, "number", "power_level"), "value": 30})
+    assert cooker.props[(3, 9)] == 30
+    await call("button", "press", {"entity_id": _entity_id(hass, "button", "pause")})
+    assert _state(hass, "sensor", "status") == "paused"
+    await call("button", "press", {"entity_id": _entity_id(hass, "button", "resume")})
+    assert _state(hass, "sensor", "status") == "cooking"
+    await call("button", "press", {"entity_id": _entity_id(hass, "button", "stop")})
+    assert _state(hass, "sensor", "status") == "idle"
+    assert cooker.props[(2, 1)] == 5, "the pretend cooker should have kept 2.1 stuck"
+    report = await async_get_config_entry_diagnostics(hass, entry)
+    assert report["properties"]["status_reported"] == 5
+    await _remove(hass, entry)
+
+
+async def test_one_missed_read_keeps_the_last_reading(hass: HomeAssistant, cooker: FakeCooker) -> None:
+    # A real cooker with its internet access blocked rejoined the Wi-Fi about every 15 minutes
+    # and missed a read each time.
+    cooker.press_start()
+    entry = await _add(hass)
+    entry.runtime_data.device._timeout = 0.2
+    cooker.silent = True
+    await _refresh(hass, entry)
+    assert entry.runtime_data.last_update_success
+    assert _state(hass, "sensor", "status") == "cooking"
+    cooker.silent = False
+    await _remove(hass, entry)
+
+
+async def test_a_cooker_quiet_for_longer_shows_as_unavailable(hass: HomeAssistant, cooker: FakeCooker) -> None:
+    entry = await _add(hass)
+    coordinator = entry.runtime_data
+    coordinator.device._timeout = 0.2
+    cooker.silent = True
+    coordinator._last_answer -= 31
+    await _refresh(hass, entry)
+    assert not coordinator.last_update_success
+    assert _state(hass, "sensor", "status") == "unavailable"
+    cooker.silent = False
+    await _refresh(hass, entry)
+    assert _state(hass, "sensor", "status") == "off"
+    await _remove(hass, entry)
+
+
 async def test_mute_writes_the_beeper_setting_and_nothing_else(hass: HomeAssistant, cooker: FakeCooker) -> None:
     entry = await _add(hass)
     switch = _entity_id(hass, "switch", "muted")
@@ -316,10 +374,10 @@ async def test_it_reads_faster_while_cooking_or_paused(hass: HomeAssistant, cook
     cooker.press_start()
     await _refresh(hass, entry)
     assert coordinator.update_interval == timedelta(seconds=5)
-    cooker.props[(2, 1)] = 4  # paused
+    cooker.set_state(fake_cooker.PAUSED, 12)
     await _refresh(hass, entry)
     assert coordinator.update_interval == timedelta(seconds=5)
-    cooker.props[(2, 1)] = 0  # idle
+    cooker.set_state(fake_cooker.IDLE, 1)
     await _refresh(hass, entry)
     assert coordinator.update_interval == timedelta(seconds=10)
     await _remove(hass, entry)

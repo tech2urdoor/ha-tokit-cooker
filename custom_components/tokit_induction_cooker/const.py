@@ -15,6 +15,10 @@ SUPPORTED_MODELS = {"chunmi.ihcooker.cbhw"}
 # How often to read the cooker. A real one answered 217 reads in a row at 10 seconds apart.
 IDLE_INTERVAL = timedelta(seconds=10)
 ACTIVE_INTERVAL = timedelta(seconds=5)
+# A cooker with its internet access blocked dropped off the Wi-Fi and rejoined about every 15
+# minutes, missing one read each time. A missed read keeps the last reading for this long before
+# the entities show as unavailable.
+KEEP_LAST_READING = timedelta(seconds=30)
 # After a command the cooker is read at once, and once more this many seconds later in case
 # it hadn't caught up. Whether a real cooker ever lags like that hasn't been measured.
 FOLLOW_UP_SECONDS = 2
@@ -69,6 +73,12 @@ WORK_STATUS = {
     18: "stopping",
     19: "timer_paused",
 }
+
+# The status shown is worked out from 3.3 work-status where it has an equivalent, and from 2.1
+# status otherwise. A real cooker with its internet access blocked kept 2.1 at 5 (off) through a
+# whole cook, a pause, a resume and a stop, while 3.3 showed each one: 2, 12, 2, then 1. 1, 2, 11
+# and 12 have been seen on a real cooker. 4, 10 and 19 are mapped from the spec's names for them.
+WORK_STATUS_TO_STATUS = {1: 0, 2: 1, 4: 3, 10: 2, 11: 5, 12: 4, 19: 4}
 
 RECIPE_TYPE = {0: "preset", 1: "single_power", 2: "multi_power", 3: "single_temperature", 4: "recipe"}
 

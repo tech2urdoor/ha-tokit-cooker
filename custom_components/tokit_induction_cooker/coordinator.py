@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import logging
+import time
 from datetime import datetime
 from typing import Any
 
@@ -11,7 +12,16 @@ from homeassistant.exceptions import HomeAssistantError
 from homeassistant.helpers.event import async_call_later
 from homeassistant.helpers.update_coordinator import DataUpdateCoordinator, UpdateFailed
 
-from .const import ACTIVE_INTERVAL, DOMAIN, FOLLOW_UP_SECONDS, IDLE_INTERVAL, PROPERTIES, STATUS_ADJUSTABLE
+from .const import (
+    ACTIVE_INTERVAL,
+    DOMAIN,
+    FOLLOW_UP_SECONDS,
+    IDLE_INTERVAL,
+    KEEP_LAST_READING,
+    PROPERTIES,
+    STATUS_ADJUSTABLE,
+    WORK_STATUS_TO_STATUS,
+)
 from .miio import MiioDevice, MiioError
 
 _LOGGER = logging.getLogger(__name__)
@@ -27,18 +37,27 @@ class TokitCoordinator(DataUpdateCoordinator[dict[str, Any]]):
         self.device = device
         self.info = info
         self._cancel_follow_up: CALLBACK_TYPE | None = None
+        self._last_answer = 0.0  # time.monotonic() of the last read that worked
 
     def _read(self) -> dict[str, Any]:
         values = self.device.get_properties(list(PROPERTIES.values()))
-        return {key: values.get(pair) for key, pair in PROPERTIES.items()}
+        data = {key: values.get(pair) for key, pair in PROPERTIES.items()}
+        # 2.1 as the cooker reported it, kept for diagnostics. See WORK_STATUS_TO_STATUS for why.
+        data["status_reported"] = data["status"]
+        data["status"] = WORK_STATUS_TO_STATUS.get(data["work_status"], data["status"])
+        return data
 
     async def _async_update_data(self) -> dict[str, Any]:
         try:
             data = await self.hass.async_add_executor_job(self._read)
         except MiioError as err:
+            if self.data is not None and time.monotonic() - self._last_answer < KEEP_LAST_READING.total_seconds():
+                _LOGGER.debug("No answer from the cooker (%s), keeping the last reading for now", err)
+                return self.data
             raise UpdateFailed(str(err)) from err
         if data.get("status") is None:
             raise UpdateFailed("the cooker returned no status")
+        self._last_answer = time.monotonic()
         # Read faster while it's cooking or paused, so temperature, power and the timer stay current.
         self.update_interval = ACTIVE_INTERVAL if data["status"] in STATUS_ADJUSTABLE else IDLE_INTERVAL
         return data

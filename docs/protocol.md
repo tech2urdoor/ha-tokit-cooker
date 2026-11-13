@@ -85,7 +85,13 @@ joins the one named, and from that moment answers only to a new token it has mad
 ## Traps
 
 - **Code 0 from start-cook doesn't mean it's heating.** It means the mode was selected. Watch
-  status, 2.1, for 1 or 2.
+  3.3 for 2 or 10, or 2.1 for 1 or 2.
+- **2.1 can stop changing.** With its internet access blocked, a cooker kept 2.1 at 5 (off) through
+  a mode selected, a cook, a pause, a resume and a stop, while 3.3 showed each one (1, 2, 12, 2, 1)
+  and the timer, power and temperature kept up. Before the block, 2.1 had followed every cook.
+  Whether the block is the cause hasn't been tested. Read 3.3 first.
+- **Behind a block it leaves and rejoins the Wi-Fi.** About every 15 minutes, without restarting:
+  its uptime carried on. It missed one read at 10-second polling each time.
 - **Plain values break the reply.** Send an action's inputs as bare values instead of
   `{"piid": n, "value": v}` objects and the cooker answers with JSON that doesn't parse.
 - **A wrong token gets silence, not an error.** It looks the same as the cooker being unplugged.

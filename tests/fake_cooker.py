@@ -7,7 +7,9 @@ It copies what a real cooker was seen to do:
 - an action sent with plain values instead of {"piid": n, "value": v} gets a reply that isn't JSON;
 - a packet it can't decrypt gets no reply at all;
 - a hello gets back ff bytes where the token would be, as it does from a cooker on Wi-Fi.
-- writing a property it lets you write (3.25, the beeper) answers code 0.
+- writing a property it lets you write (3.25, the beeper) answers code 0;
+- with status_stuck, 2.1 stays where it was while 3.3 and everything else carry on, as a real cooker's did with its
+  internet access blocked. The cooker still did what it was told; only that one field stopped changing.
 
 Where a real cooker hasn't been seen (pausing while idle, say), this answers code 1.
 """
@@ -64,6 +66,8 @@ class FakeCooker:
         self.writes: list[tuple[tuple[int, int], Any]] = []
         self.requests: list[dict[str, Any]] = []
         self.silent = False
+        self.status_stuck = False
+        self._state = OFF
         self._sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
         self._sock.bind(("127.0.0.1", 0))
         self._sock.settimeout(0.1)
@@ -82,12 +86,18 @@ class FakeCooker:
 
     @property
     def status(self) -> int:
-        return self.props[(2, 1)]
+        """Where the cooker really is, whatever 2.1 says."""
+        return self._state
+
+    def set_state(self, status: int, work_status: int) -> None:
+        self._state = status
+        self.props[(3, 3)] = work_status
+        if not self.status_stuck:
+            self.props[(2, 1)] = status
 
     def press_start(self) -> None:
         """What a finger on the cooker's own button does. Nothing on the network can do this."""
-        self.props[(2, 1)] = COOKING
-        self.props[(3, 3)] = 2
+        self.set_state(COOKING, 2)
         self.props[(3, 9)] = 70
         if not self.props[(3, 8)]:
             self.props[(3, 8)] = MODE_TARGETS[1]
@@ -188,8 +198,7 @@ class FakeCooker:
             if values.get(8) not in MODE_TARGETS:
                 return 1
             if self.status in (OFF, IDLE):
-                self.props[(2, 1)] = IDLE
-                self.props[(3, 3)] = 1
+                self.set_state(IDLE, 1)
                 self.props[(3, 8)] = MODE_TARGETS[values[8]]
             return 0
         if (siid, aiid) == (3, 13):  # set-fire
@@ -205,18 +214,15 @@ class FakeCooker:
         if (siid, aiid) == (2, 3):  # pause
             if self.status != COOKING:
                 return 1
-            self.props[(2, 1)] = PAUSED
-            self.props[(3, 3)] = 12
+            self.set_state(PAUSED, 12)
             return 0
         if (siid, aiid) == (3, 3):  # pause-recover
             if self.status != PAUSED:
                 return 1
-            self.props[(2, 1)] = COOKING
-            self.props[(3, 3)] = 2
+            self.set_state(COOKING, 2)
             return 0
         if (siid, aiid) == (2, 2):  # cancel-cooking: back to idle. It doesn't switch off.
-            self.props[(2, 1)] = IDLE
-            self.props[(3, 3)] = 1
+            self.set_state(IDLE, 1)
             self.props[(3, 8)] = 0
             self.props[(3, 9)] = 0
             return 0
