@@ -8,13 +8,11 @@ it. It's a community project and is [not affiliated with TOKIT](#disclaimer).
 
 > [!WARNING]
 > **Status: early, and run on one cooker only.** On an Induction Cooker Pro (TCL02M-3A, firmware
-> 2.2.0_0002) with a pot of water heating, pause, resume and stop pressed in Home Assistant all
-> worked, and power level and target temperature worked when sent from a script using the same
-> protocol code. Not done yet on a real cooker: power level and target temperature from Home
-> Assistant. With the cooker's internet access blocked, one of its status fields stopped changing,
-> and this release reads the status from another that kept up. That has run against a simulated
-> cooker only, copying what the real one reported. The table under
-> [What has been seen](#what-has-been-seen) keeps score.
+> 2.2.0_0002), with a pot of water heating and the cooker's internet access blocked, every control
+> was pressed in Home Assistant with 0.4.1 and worked: power level, target temperature, pause,
+> resume, stop and `Mute`. Following a change of address and Reconfigure with a new token have run
+> against a simulated cooker only. The table under [What has been seen](#what-has-been-seen) keeps
+> score.
 >
 > **The cooker can't be set up without the TOKIT app.** That was tried on the real cooker, and it
 > locks you out of it. [What was tried, and why it can't work](docs/setup-without-the-app.md).
@@ -35,7 +33,7 @@ Once someone has pressed it, everything else can be done from Home Assistant.
 | `Fault`, `Problem` | No pan, mains voltage too high or low, surface or electronics too hot, sensor faults, coil disconnected |
 | `Power level` and `Target temperature` controls | A slider and a box. They work only while the cooker is cooking or paused, and refuse otherwise |
 | `Stop`, `Pause`, `Resume` buttons | Stop ends the cook and leaves the cooker idle. It doesn't switch it off |
-| `Mute` switch | The cooker's beeper setting, under the device's configuration. Not yet tried on a real cooker |
+| `Mute` switch | On, the cooker stops beeping for commands. Under the device's configuration |
 | `tokit_induction_cooker.select_mode` action | Wakes the cooker and selects hotpot, steam or boil, stir fry, fry, or soup or congee. The cooker then waits for its button |
 
 Three more diagnostic sensors (`Detailed status`, `Program type`, `Phase`) are there but disabled.
@@ -147,7 +145,7 @@ Nothing in this integration talks to anything but the cooker. The cooker is anot
 Wi-Fi with internet access it still calls its maker's cloud by itself. To stop that, block its
 internet access at your router and leave it reachable on your network.
 
-On the one cooker blocked so far, for half an hour, it kept doing what Home Assistant told it, and
+On the one cooker blocked so far, it kept doing everything Home Assistant told it, and
 two things changed:
 
 - **It left the Wi-Fi and rejoined about every 15 minutes**, without restarting. Each time it
@@ -168,21 +166,21 @@ token](docs/token.md), give it to Home Assistant with **Reconfigure**, and put t
 
 | | Seen | How |
 |---|---|---|
-| Reading status, temperature, target, power level and time | Yes | In Home Assistant through cooks with 0.3.0. Behind the block, 0.4.0 read all of it right through a cook but the status |
+| Reading status, temperature, target, power level and time | Yes | In Home Assistant: through cooks with 0.3.0, and with 0.4.1 through a cook behind the block |
 | Selecting each of the five modes | Yes | Hotpot from Home Assistant, all five from a script |
 | The cooker waiting for its button after a mode is selected | Yes | Every time |
-| Power level and target temperature while heating | Yes | From a script. Not yet from Home Assistant |
-| Pause, resume and stop while heating | Yes | Pressed in Home Assistant 0.4.0, and the cooker did each one by its own readings |
+| Power level and target temperature while heating | Yes | Pressed in Home Assistant 0.4.1. Each change showed about 2 seconds later |
+| Pause, resume and stop while heating | Yes | Pressed in Home Assistant 0.4.0 and 0.4.1. With 0.4.1 the status followed each one |
 | Power and temperature refused while idle | Yes | In Home Assistant, and the cooker itself refuses too |
 | Reading the token from the phone, and again after the cooker was set up afresh | Yes | Both times with version 1.5.2 of the app |
 | Setup without the app | No | It can't work. The cooker makes a new token when it's given Wi-Fi details, and shows it to nothing on the network |
 | Home Assistant finding the cooker by itself | Yes | After a restart of Home Assistant 2026.11, with the address filled in |
 | Home Assistant following a change of address | No | Run against a simulated cooker only |
 | Reconfigure with a new token | No | Run against a simulated cooker only |
-| The `Mute` switch | No | Not tried on a real cooker yet, so which way round it is isn't known |
+| The `Mute` switch | Yes | On, the cooker stayed quiet when a mode was selected and stopped from Home Assistant. Off, the same commands beeped |
 | Fault reporting | No | No fault has happened yet |
-| Working with the cooker's internet access blocked | Yes | For half an hour so far, with the two changes under [Keeping it local](#keeping-it-local) |
-| The status read right while the main status field is stuck | No | 0.4.1 runs against a simulated cooker that copies the real one's readings |
+| Working with the cooker's internet access blocked | Yes | For an hour so far, every control included, with the two changes under [Keeping it local](#keeping-it-local) |
+| The status read right while the main status field is stuck | Yes | With 0.4.1, through a whole cook |
 
 ## Report your cooker
 

@@ -30,7 +30,7 @@ cooker's published spec, `urn:miot-spec-v2:device:induction-cooker:0000A033:chun
 | 3.9 fire-gears | Power level, 0 to 99 |
 | 3.15 recipe-type | 0 built-in mode, 1 fixed power, 2 stepped power, 3 fixed temperature, 4 recipe |
 | 3.24 finish-push | By its name, a notification through the cloud when a cook ends. Not used here |
-| 3.25 buzzer-mark | The beeper setting, behind the `Mute` switch. A write of the value it already had was accepted with code 0. Which way round it is hasn't been checked |
+| 3.25 buzzer-mark | The beeper setting, behind the `Mute` switch. `true` silenced the beeps for a mode selected and a stop sent over the network; `false` brought them back |
 | 3.29 move-temperature | A second temperature some modes carry. Soup has 90 |
 | 3.35 hotpot-mode | 0 boil, 1 warm. Not used here |
 
@@ -90,6 +90,8 @@ joins the one named, and from that moment answers only to a new token it has mad
   a mode selected, a cook, a pause, a resume and a stop, while 3.3 showed each one (1, 2, 12, 2, 1)
   and the timer, power and temperature kept up. Before the block, 2.1 had followed every cook.
   Whether the block is the cause hasn't been tested. Read 3.3 first.
+- **A change shows a moment later.** A read straight after power, target, pause, resume or stop
+  still had the old value; a read 2 seconds later had the new one.
 - **Behind a block it leaves and rejoins the Wi-Fi.** About every 15 minutes, without restarting:
   its uptime carried on. It missed one read at 10-second polling each time.
 - **Plain values break the reply.** Send an action's inputs as bare values instead of

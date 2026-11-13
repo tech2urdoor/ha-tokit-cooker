@@ -20,7 +20,7 @@ ACTIVE_INTERVAL = timedelta(seconds=5)
 # the entities show as unavailable.
 KEEP_LAST_READING = timedelta(seconds=30)
 # After a command the cooker is read at once, and once more this many seconds later in case
-# it hadn't caught up. Whether a real cooker ever lags like that hasn't been measured.
+# it hadn't caught up. A real one does: each change showed on the read 2 seconds later, not the first.
 FOLLOW_UP_SECONDS = 2
 
 # The beeper setting, buzzer-mark in the spec. One of the three properties it lets you write.
