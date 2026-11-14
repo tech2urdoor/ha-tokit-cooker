@@ -101,3 +101,10 @@ PIID_TARGET_TEMPERATURE = 8
 PIID_POWER_LEVEL = 9
 PIID_USER_ID = 19
 PIID_INFORMATION = 20
+
+# Read this seldom while the cooker doesn't answer, as when it's switched off at the wall, so an appliance that is
+# often unplugged doesn't keep a worker thread waiting on timeouts every few seconds.
+OFFLINE_INTERVAL = timedelta(seconds=30)
+# Setup keeps these from the cooker's miIO.info in the config entry, so it can set up while the cooker is off.
+CONF_INFO = "info"
+INFO_REMEMBERED = ("mac", "model", "fw_ver", "mcu_fw_ver", "hw_ver")

@@ -104,6 +104,9 @@
       },
       "problem": {
         "name": "Problem"
+      },
+      "connected": {
+        "name": "Connected"
       }
     },
     "number": {

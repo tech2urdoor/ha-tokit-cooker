@@ -409,7 +409,7 @@ async def test_a_new_token_goes_in_through_reconfigure(hass: HomeAssistant, cook
     assert result["type"] is FlowResultType.ABORT
     assert result["reason"] == "reconfigure_successful"
     await hass.async_block_till_done()
-    assert entry.data == ENTRY_DATA
+    assert {key: entry.data[key] for key in ENTRY_DATA} == ENTRY_DATA
     assert entry.state is ConfigEntryState.LOADED
     await _remove(hass, entry)
 
@@ -470,4 +470,67 @@ async def test_diagnostics_leave_out_the_token_and_the_addresses(hass: HomeAssis
     assert "127.0.0.1" not in text
     assert "pretend-wifi" not in text
     assert "1234567890" not in text
+    await _remove(hass, entry)
+
+
+async def test_a_cooker_switched_off_at_the_wall_still_sets_up(
+    hass: HomeAssistant, cooker: FakeCooker, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    # Unplugged, it answers nothing at all. The entry loads anyway, from what the last setup remembered, so it isn't
+    # left failing and retrying; the entities are unavailable and Connected is off until it answers.
+    entry = await _add(hass)
+    assert entry.data["info"]["mac"] == MAC
+    sw_version = _device(hass, entry).sw_version
+    assert sw_version
+    await _remove(hass, entry)
+    monkeypatch.setattr(miio.MiioDevice.__init__, "__defaults__", (0.2, 1))
+    cooker.silent = True
+    assert await hass.config_entries.async_setup(entry.entry_id)
+    await hass.async_block_till_done()
+    assert entry.state is ConfigEntryState.LOADED
+    coordinator = entry.runtime_data
+    assert _state(hass, "sensor", "status") == "unavailable"
+    assert _state(hass, "binary_sensor", "connected") == "off"
+    assert _device(hass, entry).sw_version == sw_version
+    assert coordinator.update_interval == timedelta(seconds=30)
+    cooker.silent = False
+    await _refresh(hass, entry)
+    assert _state(hass, "sensor", "status") == "off"
+    assert _state(hass, "binary_sensor", "connected") == "on"
+    assert coordinator.update_interval == timedelta(seconds=10)
+    await _remove(hass, entry)
+
+
+async def test_a_cooker_never_seen_still_waits_to_set_up(
+    hass: HomeAssistant, cooker: FakeCooker, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    # With nothing remembered there is no device to show, so setup waits for it as before.
+    monkeypatch.setattr(miio.MiioDevice.__init__, "__defaults__", (0.2, 1))
+    cooker.silent = True
+    entry = MockConfigEntry(domain=DOMAIN, data=ENTRY_DATA, unique_id=UNIQUE)
+    entry.add_to_hass(hass)
+    await hass.config_entries.async_setup(entry.entry_id)
+    await hass.async_block_till_done()
+    assert entry.state is ConfigEntryState.SETUP_RETRY
+    cooker.silent = False
+
+
+async def test_an_entry_from_an_older_release_sets_up_while_off_from_its_device(
+    hass: HomeAssistant, cooker: FakeCooker, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    # Older releases didn't remember miIO.info in the entry. The device they made still says what it is.
+    entry = await _add(hass)
+    sw_version = _device(hass, entry).sw_version
+    await _remove(hass, entry)
+    hass.config_entries.async_update_entry(entry, data=ENTRY_DATA)
+    monkeypatch.setattr(miio.MiioDevice.__init__, "__defaults__", (0.2, 1))
+    cooker.silent = True
+    assert await hass.config_entries.async_setup(entry.entry_id)
+    await hass.async_block_till_done()
+    assert entry.state is ConfigEntryState.LOADED
+    assert _device(hass, entry).sw_version == sw_version
+    assert _state(hass, "binary_sensor", "connected") == "off"
+    cooker.silent = False
+    await _refresh(hass, entry)
+    assert _state(hass, "sensor", "status") == "off"
     await _remove(hass, entry)

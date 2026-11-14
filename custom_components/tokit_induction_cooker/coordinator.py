@@ -18,6 +18,7 @@ from .const import (
     FOLLOW_UP_SECONDS,
     IDLE_INTERVAL,
     KEEP_LAST_READING,
+    OFFLINE_INTERVAL,
     PROPERTIES,
     STATUS_ADJUSTABLE,
     WORK_STATUS_TO_STATUS,
@@ -54,6 +55,7 @@ class TokitCoordinator(DataUpdateCoordinator[dict[str, Any]]):
             if self.data is not None and time.monotonic() - self._last_answer < KEEP_LAST_READING.total_seconds():
                 _LOGGER.debug("No answer from the cooker (%s), keeping the last reading for now", err)
                 return self.data
+            self.update_interval = OFFLINE_INTERVAL
             raise UpdateFailed(str(err)) from err
         if data.get("status") is None:
             raise UpdateFailed("the cooker returned no status")

@@ -1,6 +1,8 @@
 """TOKIT induction cooker (chunmi.ihcooker.cbhw), controlled over the LAN with no cloud."""
 from __future__ import annotations
 
+import logging
+
 import voluptuous as vol
 
 from homeassistant.config_entries import ConfigEntryState
@@ -11,9 +13,11 @@ from homeassistant.helpers import config_validation as cv
 from homeassistant.helpers import device_registry as dr
 from homeassistant.helpers.typing import ConfigType
 
-from .const import ACTION_START_COOK, COOK_MODES, DOMAIN, PIID_COOK_MODE
+from .const import ACTION_START_COOK, CONF_INFO, COOK_MODES, DOMAIN, INFO_REMEMBERED, PIID_COOK_MODE
 from .coordinator import TokitConfigEntry, TokitCoordinator
 from .miio import MiioDevice, MiioError
+
+_LOGGER = logging.getLogger(__name__)
 
 PLATFORMS = [Platform.BINARY_SENSOR, Platform.BUTTON, Platform.NUMBER, Platform.SENSOR, Platform.SWITCH]
 CONFIG_SCHEMA = cv.config_entry_only_config_schema(DOMAIN)
@@ -51,12 +55,34 @@ async def async_setup_entry(hass: HomeAssistant, entry: TokitConfigEntry) -> boo
     try:
         info = await hass.async_add_executor_job(device.info)
     except MiioError as err:
-        raise ConfigEntryNotReady(f"Cooker at {entry.data[CONF_HOST]} isn't answering: {err}") from err
+        # Switched off at the wall, most likely. Set up from what the last setup remembered, with the entities
+        # unavailable until it answers, rather than leave the entry failing and retrying for as long as it's off.
+        if not (info := entry.data.get(CONF_INFO) or _info_from_device_registry(hass, entry)):
+            raise ConfigEntryNotReady(f"Cooker at {entry.data[CONF_HOST]} isn't answering: {err}") from err
+        info = dict(info)
+        _LOGGER.info("Cooker at %s isn't answering (%s), so it shows as unavailable until it does", entry.data[CONF_HOST], err)
+    else:
+        remembered = {key: info[key] for key in INFO_REMEMBERED if key in info}
+        if entry.data.get(CONF_INFO) != remembered:
+            hass.config_entries.async_update_entry(entry, data={**entry.data, CONF_INFO: remembered})
     coordinator = TokitCoordinator(hass, entry, device, info)
-    await coordinator.async_config_entry_first_refresh()
+    # Not async_config_entry_first_refresh: a cooker that is off gives a loaded entry with unavailable entities.
+    await coordinator.async_refresh()
     entry.runtime_data = coordinator
     await hass.config_entries.async_forward_entry_setups(entry, PLATFORMS)
     return True
+
+
+
+def _info_from_device_registry(hass: HomeAssistant, entry: TokitConfigEntry) -> dict[str, str] | None:
+    """What an entry set up before releases that remember miIO.info can still show, from its device."""
+    if not entry.unique_id:
+        return None
+    device = dr.async_get(hass).async_get_device(identifiers={(DOMAIN, entry.unique_id)})
+    if device is None:
+        return None
+    info = {"mac": entry.unique_id, "model": device.model_id, "fw_ver": device.sw_version, "hw_ver": device.hw_version}
+    return {key: value for key, value in info.items() if value}
 
 
 async def async_unload_entry(hass: HomeAssistant, entry: TokitConfigEntry) -> bool:

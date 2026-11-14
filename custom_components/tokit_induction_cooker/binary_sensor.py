@@ -14,7 +14,10 @@ from .entity import TokitEntity
 async def async_setup_entry(
     hass: HomeAssistant, entry: TokitConfigEntry, async_add_entities: AddConfigEntryEntitiesCallback
 ) -> None:
-    async_add_entities([TokitHeating(entry.runtime_data, "heating"), TokitProblem(entry.runtime_data, "problem")])
+    async_add_entities([
+        TokitHeating(entry.runtime_data, "heating"), TokitProblem(entry.runtime_data, "problem"),
+        TokitConnected(entry.runtime_data, "connected"),
+    ])
 
 
 class TokitHeating(TokitEntity, BinarySensorEntity):
@@ -32,3 +35,18 @@ class TokitProblem(TokitEntity, BinarySensorEntity):
     @property
     def is_on(self) -> bool:
         return bool(self.coordinator.data.get("fault"))
+
+
+class TokitConnected(TokitEntity, BinarySensorEntity):
+    """Whether the cooker answers on the network. Off, not unavailable, while it's unplugged."""
+
+    _attr_device_class = BinarySensorDeviceClass.CONNECTIVITY
+    _attr_entity_category = EntityCategory.DIAGNOSTIC
+
+    @property
+    def available(self) -> bool:
+        return True
+
+    @property
+    def is_on(self) -> bool:
+        return self.coordinator.last_update_success

@@ -30,6 +30,7 @@ Once someone has pressed it, everything else can be done from Home Assistant.
 | `Temperature`, `Target temperature` | In °C. See the note on [idle readings](docs/protocol.md#traps) |
 | `Power level` | 0 to 99, the cooker's own scale |
 | `Time remaining`, `Cooking time` | In minutes |
+| `Connected` | Whether the cooker answers on the network. Off while it is switched off at the wall. Diagnostic |
 | `Fault`, `Problem` | No pan, mains voltage too high or low, surface or electronics too hot, sensor faults, coil disconnected |
 | `Power level` and `Target temperature` controls | A slider and a box. They work only while the cooker is cooking or paused, and refuse otherwise |
 | `Stop`, `Pause`, `Resume` buttons | Stop ends the cook and leaves the cooker idle. It doesn't switch it off |
@@ -40,6 +41,10 @@ Three more diagnostic sensors (`Detailed status`, `Program type`, `Phase`) are t
 
 It reads the cooker every 10 seconds, and every 5 while it is cooking or paused. After a command
 it reads at once, and once more two seconds later.
+
+Unplugged or switched off at the wall, the cooker answers nothing. Home Assistant still sets it up, from what it
+remembered last time, and shows it as unavailable with `Connected` off, rather than failing and retrying. It reads it
+every 30 seconds until it answers again. Only a cooker Home Assistant has never seen has to be on to be set up.
 
 For a message when a cook ends, a stop after a set time, or a warning when the hob has been left on,
 see [Automations](docs/automations.md). Home Assistant does those itself, so they work without the
@@ -179,6 +184,7 @@ token](docs/token.md), give it to Home Assistant with **Reconfigure**, and put t
 | Reconfigure with a new token | No | Run against a simulated cooker only |
 | The `Mute` switch | Yes | On, the cooker stayed quiet when a mode was selected and stopped from Home Assistant. Off, the same commands beeped |
 | Fault reporting | No | No fault has happened yet |
+| Setting up while the cooker is switched off at the wall | No | Run against a simulated cooker only |
 | Working with the cooker's internet access blocked | Yes | For an hour so far, every control included, with the two changes under [Keeping it local](#keeping-it-local) |
 | The status read right while the main status field is stuck | Yes | With 0.4.1, through a whole cook |
 
